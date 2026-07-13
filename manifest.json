@@ -1,7 +1,7 @@
 {
   "name": "花札占い",
   "short_name": "花札占い",
-  "start_url": "./start.html",
+  "start_url": "/start.html",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#d32f2f",
