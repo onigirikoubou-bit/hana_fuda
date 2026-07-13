@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>花札占い - 複数枚引き</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* 複数枚引き専用の追加スタイル */
+        .slot-wrapper {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin: 20px 0;
+        }
+        .slot {
+            width: 107px;
+            height: 169px;
+            border: 2px dashed #d4af37;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #d4af37;
+        }
+        #ai-result-area {
+            margin-top: 30px;
+            padding: 20px;
+            border: 1px solid #d4af37;
+            border-radius: 8px;
+            text-align: left;
+            max-width: 500px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>複数枚占い</h1>
+        <div class="instruction">山札をタップして、札を並べてください</div>
+    </header>
+
+    <div class="main-wrapper">
+        <div class="card-area">
+            <div id="card-container"></div>
+            <div id="heading">山札</div>
+        </div>
+
+        <div id="result-area">
+            <!-- 札を並べる場所 -->
+            <div class="slot-wrapper">
+                <div class="slot" id="slot-0">?</div>
+                <div class="slot" id="slot-1">?</div>
+                <div class="slot" id="slot-2">?</div>
+            </div>
+            
+            <!-- AI結果の受け皿 -->
+            <div id="ai-result-area">
+                <h3 class="mincho-label">占いの総合解釈</h3>
+                <div id="ai-response">札をすべて選ぶと、ここに運勢が表示されます</div>
+            </div>
+        </div>
+    </div>
+
+    <script src="cards.js"></script>
+    <script src="multi_script.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>花札占い - 運勢の入り口</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .menu-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 80vh;
+            gap: 20px;
+        }
+        .menu-button {
+            display: block;
+            width: 200px;
+            padding: 15px;
+            text-align: center;
+            background-color: #d4af37;
+            color: #1a237e;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: bold;
+            font-family: "游明朝", serif;
+            transition: 0.3s;
+        }
+        .menu-button:hover {
+            background-color: #b8860b;
+            color: #fff;
+        }
+    </style>
+</head>
+<body>
+    <header style="text-align: center; padding-top: 50px;">
+        <h1>花札占い</h1>
+        <p>今日という日を占う</p>
+    </header>
+
+    <div class="menu-container">
+        <a href="index.html" class="menu-button">1枚引き（今日の運勢）</a>
+        <a href="multi.html" class="menu-button">2枚引き（対人・状況）</a>
+        <a href="multi.html" class="menu-button">3枚引き（過去・現在・未来）</a>
+    </div>
+</body>
+</html>

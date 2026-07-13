@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>花札占い</title>
+    <!-- CSSを読み込む -->
+    <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icon-192.png">
+
+    <!-- サービスワーカーの登録 -->
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('./sw.js');
+        });
+      }
+    </script>
+</head>
+<body>
+    <header>
+        <h1>今日の運勢</h1>
+        <div class="instruction">札上でタップしてから離すと占います</div>
+    </header>
+    
+    <div class="main-wrapper">
+    <!-- 左側：画像と名前 -->
+    <div class="card-area">
+        <div id="card-container"></div>
+        <div id="heading"></div>
+    </div>
+
+    <!-- 右側：結果エリア -->
+    <div id="result-area">
+        <div id="rank"></div>
+        <div id="summary"></div>
+        <hr>
+        <div id="fortune-list"></div>
+    </div>
+</div>
+
+    <!-- JSを読み込む (順序が重要です) -->
+    <script src="cards.js"></script>
+    <script src="script.js" defer></script>
+</body>
+</html>
