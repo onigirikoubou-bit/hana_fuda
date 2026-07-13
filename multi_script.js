@@ -70,7 +70,7 @@ async function getFortuneFromAI(prompt) {
   resultArea.innerText = "鑑定中..."; // 「考え中」を表示
 
   try {
-    const response = await fetch('http://localhost:3000/ask', {
+    const response = await fetch('/ask', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ prompt: prompt })
