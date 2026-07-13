@@ -35,8 +35,8 @@
 </head>
 <body>
     <header>
-        <h1>複数枚占い</h1>
-        <div class="instruction">山札をタップして、札を並べてください</div>
+        <h1>花札占い</h1>
+        <div class="instruction">山札をタップしてください</div>
     </header>
 
     <div class="main-wrapper">
@@ -51,13 +51,13 @@
                 <div class="slot" id="slot-0">?</div>
                 <div class="slot" id="slot-1">?</div>
                 <div class="slot" id="slot-2">?</div>
+                <button id="retry-btn" style="display: none; margin-top: 10px;">AIに再問い合わせする</button>
             </div>
             
             <!-- AI結果の受け皿 -->
             <div id="ai-result-area">
                 <h3 class="mincho-label">占いの総合解釈</h3>
                 <div id="ai-response">札をすべて選ぶと、ここに運勢が表示されます</div>
-                <button id="retry-btn" style="display: none; margin-top: 10px;">AIに再問い合わせする</button>
             </div>
         </div>
     </div>
