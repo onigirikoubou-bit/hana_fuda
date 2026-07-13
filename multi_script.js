@@ -65,32 +65,46 @@ container.addEventListener('mouseup', () => {
     }
 });
 
-async function getFortuneFromAI(prompt) {
-  const resultArea = document.getElementById('ai-response');
-  resultArea.innerText = "鑑定中..."; // 「考え中」を表示
+const retryBtn = document.getElementById('retry-btn');
+let lastPrompt = ""; // 前回の内容を保存しておく変数
 
-  try {
-    const response = await fetch('/ask', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ prompt: prompt })
-    });
+// メインの問い合わせ関数
+async function getFortuneFromAI(prompt, retries = 3) {
+    lastPrompt = prompt; // 今回の内容を保存
+    retryBtn.style.display = 'none'; // 再送ボタンを隠す
 
-    if (!response.ok) throw new Error('サーバーに接続できませんでした');
+    try {
+        const response = await fetch('/ask', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ prompt: prompt })
+        });
 
-    const data = await response.json();
+        // 503エラー（混雑）かつ、まだリトライ回数が残っている場合
+        if (response.status === 503 && retries > 0) {
+            console.log(`混雑中です。あと${retries}回自動リトライします...`);
+            await new Promise(resolve => setTimeout(resolve, 2000)); // 2秒待機
+            return getFortuneFromAI(prompt, retries - 1); // 再帰的に呼び出し
+        }
 
-    // データがあるか確認してから表示
-    if (data && data.reply) {
-      resultArea.innerText = data.reply;
-    } else {
-      resultArea.innerText = "AIから回答がありませんでした。";
+        // 成功、またはリトライし尽くした後の処理
+        if (!response.ok) throw new Error('サーバーエラー');
+        
+        const data = await response.json();
+        // ここに結果を表示する処理を書く
+        console.log("AIの回答:", data.reply);
+
+    } catch (err) {
+        console.error("エラー発生:", err);
+        alert("ただいま混雑のため接続できません。少々待ってから「再問い合わせ」ボタンを押してください。");
+        retryBtn.style.display = 'block'; // 最終的にダメならボタンを表示
     }
-  } catch (error) {
-    console.error("通信エラー:", error);
-    resultArea.innerText = "サーバーが起動しているか確認してください。";
-  }
 }
+
+// 再送ボタンのクリックイベント
+retryBtn.addEventListener('click', () => {
+    getFortuneFromAI(lastPrompt); // 保存していた内容で再開
+});
 
 
 // ボタンを「いつ」押してもいいように、クリックされた瞬間にボタンを探す書き方にします
