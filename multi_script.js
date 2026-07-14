@@ -38,6 +38,7 @@ function generateFortunePrompt(cards) {
 
 
 // クリックイベント
+// --- containerの開始 ---
 container.addEventListener('mouseup', () => {
     if (selectedCards.length >= targetCount) return;
     if (!drawQueue || drawQueue.length === 0) drawQueue = getRandomCards(3);
@@ -60,15 +61,18 @@ container.addEventListener('mouseup', () => {
             <div id="fortune-result-area"></div>
         `;
 
+        // ボタンのクリックイベント
         document.getElementById('fortune-button').addEventListener('click', async () => {
             const aiText = document.getElementById('ai-text');
             const resultArea = document.getElementById('fortune-result-area');
+            const fortuneBtn = document.getElementById('fortune-button');
             
             aiText.textContent = "AIが思考中...";
-            document.getElementById('fortune-button').style.display = 'none';
+            fortuneBtn.style.display = 'none';
 
             try {
                 const data = await getFortuneFromAI(generateFortunePrompt(selectedCards));
+                
                 if (data && data.reply) {
                     let fortuneHtml = selectedCards.map(c => `<p><strong>${c.name}：</strong> ${c.fortune}</p>`).join("");
                     resultArea.innerHTML = `
@@ -80,13 +84,14 @@ container.addEventListener('mouseup', () => {
                     aiText.textContent = "鑑定完了";
                 }
             } catch (err) {
-                aiText.textContent = "現在混雑しています。ボタンを押して再試行してください。";
-                document.getElementById('fortune-button').style.display = 'block';
+                aiText.textContent = "現在混雑しています。もう一度ボタンを押して再試行してください。";
+                fortuneBtn.style.display = 'block';
             }
-        });
-    }
-});
+        }); // ← ボタンのクリックイベントを閉じる
+    } // ← if (selectedCards.length === targetCount) を閉じる
+}); // ← containerのmouseupを閉じる
 
+// --- 以下、関数など ---
 const retryBtn = document.getElementById('retry-btn');
 let lastPrompt = "";
 
