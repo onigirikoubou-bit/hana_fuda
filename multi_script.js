@@ -53,94 +53,79 @@ container.addEventListener('mouseup', () => {
     selectedCards.push(found);
 
     if (selectedCards.length === targetCount) {
-        let fortuneHtml = selectedCards.map(c => `<p><strong>${c.name}：</strong> ${c.fortune}</p>`).join("");
-        aiResponse.innerHTML = `<h3>総合運勢</h3><p id="ai-text">準備が整いました。</p><button id="fortune-button">AIに運勢を解釈してもらう</button><hr><h3>札ごとのメッセージ</h3>${fortuneHtml}`;
-        
+        aiResponse.innerHTML = `
+            <h3>総合運勢</h3>
+            <p id="ai-text">準備が整いました。</p>
+            <button id="fortune-button">AIに運勢を解釈してもらう</button>
+            <div id="fortune-result-area"></div>
+        `;
+
         document.getElementById('fortune-button').addEventListener('click', async () => {
-    const aiText = document.getElementById('ai-text');
-    aiText.textContent = "AIが思考中...";
-    
-    try {
-        const data = await getFortuneFromAI(generateFortunePrompt(selectedCards));
-        
-        // データが取得できた場合のみ表示を更新
-        if (data && data.reply) {
-            aiText.innerHTML = data.reply.replace(/\n/g, '<br>');
+            const aiText = document.getElementById('ai-text');
+            const resultArea = document.getElementById('fortune-result-area');
+            
+            aiText.textContent = "AIが思考中...";
             document.getElementById('fortune-button').style.display = 'none';
-        }
-    } catch (err) {
-        aiText.textContent = "現在混雑しています。ボタンを押して再試行してください。";
-    }
+
+            try {
+                const data = await getFortuneFromAI(generateFortunePrompt(selectedCards));
+                if (data && data.reply) {
+                    let fortuneHtml = selectedCards.map(c => `<p><strong>${c.name}：</strong> ${c.fortune}</p>`).join("");
+                    resultArea.innerHTML = `
+                        <div class="ai-reply">${data.reply.replace(/\n/g, '<br>')}</div>
+                        <hr>
+                        <h3>札ごとのメッセージ</h3>
+                        ${fortuneHtml}
+                    `;
+                    aiText.textContent = "鑑定完了";
+                }
+            } catch (err) {
+                aiText.textContent = "現在混雑しています。ボタンを押して再試行してください。";
+                document.getElementById('fortune-button').style.display = 'block';
+            }
         });
     }
 });
 
 const retryBtn = document.getElementById('retry-btn');
-let lastPrompt = ""; // 前回の内容を保存しておく変数
+let lastPrompt = "";
 
-// メインの問い合わせ関数
 async function getFortuneFromAI(prompt, retries = 3) {
     lastPrompt = prompt; 
-    retryBtn.style.display = 'none';
+    if(retryBtn) retryBtn.style.display = 'none';
 
     try {
-        // ★ここを修正：fetch を追加しました
         const response = await fetch('/ask', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ prompt: prompt })
         });
 
-        // 503エラーの判定
         if (response.status === 503 && retries > 0) {
-            console.log(`混雑中です。あと${retries}回自動リトライします...`);
             await new Promise(resolve => setTimeout(resolve, 2000));
             return getFortuneFromAI(prompt, retries - 1);
         }
 
         if (!response.ok) throw new Error('サーバーエラー');
-        
-        const data = await response.json();
-        return data; // ★呼び出し元にデータを返すために return が必要です
-
+        return await response.json();
     } catch (err) {
         console.error("エラー発生:", err);
-        // ここで再送ボタンを表示
-        retryBtn.style.display = 'block';
-        throw err; // エラーを呼び出し元に伝播させる
+        if(retryBtn) retryBtn.style.display = 'block';
+        throw err;
     }
 }
 
-// --- 修正済みのイベントリスナー ---
-// 重複を避け、1つにまとめました。
 document.addEventListener('click', async (event) => {
-    // クリックされた場所が 'fortune-exec-btn' かどうかを確認
     if (event.target && event.target.id === 'fortune-exec-btn') {
-        
-        console.log("占いボタンが押されました！");
-        
-        // 1. 表示エリアの取得と「鑑定中」の表示
         const resultArea = document.getElementById('ai-response');
-        if (resultArea) {
-            resultArea.innerText = "鑑定中...";
-        }
-
-        // 2. 占いのプロンプト
-        const prompt = "花札で3枚の札を引きました。それぞれの意味と、総合的な運勢を占ってください。";
-        
-        // 3. AIと通信
+        if (resultArea) resultArea.innerText = "鑑定中...";
         try {
-            const data = await getFortuneFromAI(prompt);
-            // 結果を表示（成功時）
-            if (data && data.reply) {
+            const data = await getFortuneFromAI("花札で3枚の札を引きました。それぞれの意味と、総合的な運勢を占ってください。");
+            if (data && data.reply && resultArea) {
                 resultArea.innerHTML = data.reply.replace(/\n/g, '<br>');
             }
         } catch (error) {
-            // エラー時はコンソールに出し、必要ならユーザーに通知
-            console.error("占い実行中のエラー:", error);
-            if (resultArea) {
-                resultArea.innerText = "鑑定中にエラーが発生しました。もう一度お試しください。";
-            }
+            if (resultArea) resultArea.innerText = "鑑定中にエラーが発生しました。";
         }
     }
 });
