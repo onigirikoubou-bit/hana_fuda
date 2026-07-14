@@ -74,7 +74,7 @@ container.addEventListener('mouseup', () => {
                 const data = await getFortuneFromAI(generateFortunePrompt(selectedCards));
                 
                 if (data && data.reply) {
-                    let fortuneHtml = selectedCards.map(c => `<p><strong>${c.name}：</strong> ${c.fortune}</p>`).join("");
+                    let fortuneHtml = selectedCards.map(c => `<p><strong>${c.name}：</strong> ${JSON.stringify(c.fortune)}</p>`).join("");
                     resultArea.innerHTML = `
                         <div class="ai-reply">${data.reply.replace(/\n/g, '<br>')}</div>
                         <hr>
