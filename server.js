@@ -1,6 +1,6 @@
 const express = require('express');
 const app = express();
-const port = process.env.PORT || 3000;
+const path = require('path'); // 追加
 
 // JSONを扱えるようにする設定（これがないとリクエストを受け取れません）
 app.use(express.json());
