@@ -47,9 +47,7 @@ ${cardsText}
 ・[待ち人]：(ここに統合された内容)
 ・[失せ物]：(ここに統合された内容)
 ※その他、重要な項目があれば適宜加えてください。そして最後に、前向きになれるようなメッセージを、日本時間の偶数日には短歌風に、奇数日には詩的な文章でまとめてください。なお文章には偶数日とか奇数日とか入れずに、「今日は短歌風に（詩歌風に）まとめます」としてください。
-
-※重要：回答には「引いた札のリスト」や「個別の札ごとのメッセージ」を直接出力・羅列しないでください。必ず上記1と2の形式のみで回答してください。
-`;
+※重要：回答には「引いた札のリスト」や「個別の札ごとのメッセージ」を直接出力・羅列しないでください。必ず上記1と2の形式のみで回答してください。`;
 }
 
 // ★ここが重要：関数を外に出しました
@@ -117,25 +115,25 @@ container.addEventListener('mouseup', () => {
 const retryBtn = document.getElementById('retry-btn');
 let lastPrompt = "";
 
-async function getFortuneFromAI(prompt, retries = 5) { // リトライ回数を5回に増量
+// multi_script.js の送信処理部分をこのように書き換えてください
+async function getFortuneFromAI(prompt, retries = 3) {
     try {
         const response = await fetch('/ask', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ prompt: prompt })
+            // ★ポイント：JSON.stringifyは改行を適切にエスケープ処理しますが、
+            // 万が一のために、プロンプト文字列が空でないか確認
+            body: JSON.stringify({ prompt: prompt }) 
         });
 
-        // サーバーが起動中の場合 (503)
-        if (response.status === 503 && retries > 0) {
-            console.log(`サーバー起動中...残りリトライ回数: ${retries}`);
-            await new Promise(resolve => setTimeout(resolve, 5000)); // 5秒待機
-            return getFortuneFromAI(prompt, retries - 1);
+        // 応答をチェック
+        if (!response.ok) {
+            const errorText = await response.text(); // サーバーからのエラー内容を取得
+            console.error("サーバー応答エラー:", errorText);
+            throw new Error(`サーバーエラー: ${response.status}`);
         }
-
-        if (!response.ok) throw new Error('サーバーエラー');
         return await response.json();
     } catch (err) {
-        console.error("通信エラー:", err);
         throw err;
     }
 }
