@@ -11,14 +11,10 @@ fetch('hanafuda_data.json')
     .then(data => { hanafudaData = data; })
     .catch(error => console.error("データ読み込み失敗:", error));
 
-    // multi_script.js の一番上のどこかに追記
+// 初期化と起動用リクエスト
 window.addEventListener('load', () => {
-    // サーバーをこっそり起こしておくための軽いリクエスト
-    fetch('/ask', { 
-        method: 'POST', 
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt: "keep-alive" }) // 軽いメッセージ
-    }).catch(err => console.log("起動準備完了"));
+    drawQueue = getRandomCards(3);
+    fetch('/ask', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt: "keep-alive" }) }).catch(err => console.log("起動準備完了"));
 });
 
 // シャッフル関数
@@ -31,20 +27,10 @@ function getRandomCards(count) {
     return shuffled.slice(0, count);
 }
 
-// ページ読み込み時
-window.addEventListener('load', () => {
-    drawQueue = getRandomCards(3);
-});
-
-// AI通信関連関数
+// プロンプト生成（修正なし）
 function generateFortunePrompt(cards) {
-    const cardsText = cards.map(c => `
-【札の名前】: ${c.name}
-【詳細情報】: ${typeof c.fortune === 'object' ? JSON.stringify(c.fortune) : c.fortune}
-    `).join("\n");
-
-    return `
-あなたは手練の花札占いの専門家です。以下の3枚の札に基づき、相談者の運勢を占ってください。
+    const cardsText = cards.map(c => `【札の名前】: ${c.name}\n【詳細情報】: ${typeof c.fortune === 'object' ? JSON.stringify(c.fortune) : c.fortune}`).join("\n");
+    return `あなたは手練の花札占いの専門家です。以下の3枚の札に基づき、相談者の運勢を占ってください。
 
 ■引いた札の情報:
 ${cardsText}
@@ -66,77 +52,66 @@ ${cardsText}
 `;
 }
 
+// ★ここが重要：関数を外に出しました
+function resetGame() {
+    selectedCards = [];
+    drawQueue = getRandomCards(3);
+    aiResponse.innerHTML = `<h3>総合運勢</h3><p id="ai-text">準備が整いました。</p><button id="fortune-button">AIに運勢を解釈してもらう</button><div id="fortune-result-area"></div>`;
+    setupFortuneButton();
+    for(let i = 0; i < 3; i++) {
+        const slot = document.getElementById(`slot-${i}`);
+        if(slot) { slot.style.backgroundImage = "none"; slot.textContent = `札 ${i+1}`; }
+    }
+}
 
-// クリックイベント
-// --- containerの開始 ---
+function setupFortuneButton() {
+    const btn = document.getElementById('fortune-button');
+    if (!btn) return;
+    btn.addEventListener('click', async () => {
+        const aiText = document.getElementById('ai-text');
+        const resultArea = document.getElementById('fortune-result-area');
+        const fortuneBtn = document.getElementById('fortune-button');
+        aiText.textContent = "AIが思考中...";
+        fortuneBtn.style.display = 'none';
+        try {
+            const data = await getFortuneFromAI(generateFortunePrompt(selectedCards));
+            if (data && data.reply) {
+                saveHistory(data.reply, selectedCards);
+                resultArea.innerHTML = `<div class="ai-reply">${data.reply.replace(/\n/g, '<br>')}</div><button id="reset-button">もう一度占う</button>`;
+                document.getElementById('reset-button').addEventListener('click', resetGame);
+            }
+        } catch (err) {
+            aiText.textContent = "現在混雑しています。もう一度ボタンを押してください。";
+            fortuneBtn.style.display = 'block';
+        }
+    });
+}
+
+function saveHistory(resultText, cards) {
+    let history = JSON.parse(localStorage.getItem('fortuneHistory') || '[]');
+    history.unshift({ date: new Date().toLocaleString(), content: resultText, cardIds: cards.map(c => c.id) });
+    localStorage.setItem('fortuneHistory', JSON.stringify(history.slice(0, 10)));
+}
+
+// 鑑定実行（mouseup イベント）
 container.addEventListener('mouseup', () => {
     if (selectedCards.length >= targetCount) return;
     if (!drawQueue || drawQueue.length === 0) drawQueue = getRandomCards(3);
 
     const nextCard = drawQueue[selectedCards.length];
     const found = hanafudaData.find(c => c.id === nextCard.id);
-    
     const slot = document.getElementById(`slot-${selectedCards.length}`);
     slot.style.backgroundImage = "url('hanafuda.png')";
     slot.style.backgroundPosition = `-${found.col * 123}px -${found.row * 185}px`;
     slot.textContent = "";
-
     selectedCards.push(found);
 
     if (selectedCards.length === targetCount) {
-        aiResponse.innerHTML = `
-            <h3>総合運勢</h3>
-            <p id="ai-text">準備が整いました。</p>
-            <button id="fortune-button">AIに運勢を解釈してもらう</button>
-            <div id="fortune-result-area"></div>
-        `;
+        aiResponse.innerHTML = `<h3>総合運勢</h3><p id="ai-text">準備が整いました。</p><button id="fortune-button">AIに運勢を解釈してもらう</button><div id="fortune-result-area"></div>`;
+        setupFortuneButton();
+    }
+});
 
-        document.getElementById('fortune-button').addEventListener('click', async () => {
-            const aiText = document.getElementById('ai-text');
-            const resultArea = document.getElementById('fortune-result-area');
-            const fortuneBtn = document.getElementById('fortune-button');
-            
-            aiText.textContent = "AIが思考中...";
-            fortuneBtn.style.display = 'none';
-
-            try {
-                const data = await getFortuneFromAI(generateFortunePrompt(selectedCards));
-                
-                if (data && data.reply) {
-                    // 履歴保存を実行
-            saveHistory(data.reply, selectedCards); // 第2引数に selectedCards を追加
-            
-                    resultArea.innerHTML = `
-                        <div class="ai-reply">${data.reply.replace(/\n/g, '<br>')}</div>
-                        <button id="reset-button" style="margin-top:20px;">もう一度占う</button>
-                    `;
-                    aiText.textContent = "鑑定完了";
-
-                    // リセットボタンの処理
-                    document.getElementById('reset-button').addEventListener('click', () => {
-                        selectedCards = [];
-                        drawQueue = getRandomCards(3);
-                        aiResponse.innerHTML = `
-                    <h3>総合運勢</h3>
-                    <p id="ai-text">準備が整いました。</p>
-                    <button id="fortune-button">AIに運勢を解釈してもらう</button>
-                    <div id="fortune-result-area"></div>
-                `;
-                // ※重要：再配置したボタンに再度イベントを紐付けるため、
-                // 上記コード（if (selectedCards.length === targetCount) { ... }）の
-                // 全体構造を関数化しておくのが理想ですが、まずはこれで動作を確認してみてください。
-                
-                // 初回読み込み時のイベント紐付けを再実行するための関数呼び出しが必要になる場合があります
-                location.reload(); // ← 確実に直すための手っ取り早い解決策（再読み込み）です
-            });
-        }
-    } catch (err) {
-                aiText.textContent = "現在混雑しています。もう一度ボタンを押して再試行してください。";
-                fortuneBtn.style.display = 'block';
-            }
-        });
-    } // ← if (selectedCards.length === targetCount) を閉じる
-}); // ← containerのmouseupを閉じる
 
 // --- 以下、関数など ---
 const retryBtn = document.getElementById('retry-btn');
@@ -222,27 +197,33 @@ document.getElementById('show-history-btn').addEventListener('click', () => {
     }
 });
 
+// 履歴表示関数の修正
 window.displayHistoryResult = function(index) {
     let history = JSON.parse(localStorage.getItem('fortuneHistory') || '[]');
     let selected = history[index];
     
-    // 1. 鑑定結果の表示
+    // 鑑定結果表示
     const resultArea = document.getElementById('fortune-result-area');
-    resultArea.innerHTML = `
-        <div class="ai-reply"><h3>過去の鑑定結果 (${selected.date})</h3>${selected.content.replace(/\n/g, '<br>')}</div>
-        <button onclick="location.reload()" style="margin-top:20px;">閉じて最初から占う</button>
-    `;
+    resultArea.innerHTML = `<div>${selected.content.replace(/\n/g, '<br>')}</div>`;
     
-    // 2. カード画像（スロット）の復元
+    // カード画像復元
     selected.cardIds.forEach((id, i) => {
         const found = hanafudaData.find(c => c.id === id);
         const slot = document.getElementById(`slot-${i}`);
         if (slot && found) {
             slot.style.backgroundImage = "url('hanafuda.png')";
             slot.style.backgroundPosition = `-${found.col * 123}px -${found.row * 185}px`;
-            slot.textContent = "";
         }
     });
-
     document.getElementById('history-area').style.display = 'none';
 };
+
+// リスト生成時の修正
+list.innerHTML = history.map((item, index) => `
+    <div style="border-bottom:1px solid #ccc; padding:10px;">
+        ${item.date}<br>
+        <button onclick="displayHistoryResult(${index})">この結果を見る</button>
+    </div>
+`).join("");
+
+
