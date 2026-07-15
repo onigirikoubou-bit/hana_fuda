@@ -11,6 +11,16 @@ fetch('hanafuda_data.json')
     .then(data => { hanafudaData = data; })
     .catch(error => console.error("データ読み込み失敗:", error));
 
+    // multi_script.js の一番上のどこかに追記
+window.addEventListener('load', () => {
+    // サーバーをこっそり起こしておくための軽いリクエスト
+    fetch('/ask', { 
+        method: 'POST', 
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: "keep-alive" }) // 軽いメッセージ
+    }).catch(err => console.log("起動準備完了"));
+});
+
 // シャッフル関数
 function getRandomCards(count) {
     let shuffled = [...hanafudaData]; 
@@ -99,6 +109,9 @@ container.addEventListener('mouseup', () => {
                     `;
                     aiText.textContent = "鑑定完了";
 
+                    // ★履歴を保存する！
+                    saveHistory(fullText);
+
                     // リセットボタンの処理
                     document.getElementById('reset-button').addEventListener('click', () => {
                         selectedCards = [];
@@ -165,5 +178,45 @@ document.addEventListener('click', async (event) => {
         } catch (error) {
             if (resultArea) resultArea.innerText = "鑑定中にエラーが発生しました。";
         }
+    }
+});
+
+function saveHistory(resultText) {
+    // 履歴を取得して配列に変換
+    let history = JSON.parse(localStorage.getItem('fortuneHistory') || '[]');
+    
+    // 最新の結果を先頭に追加（日付付き）
+    history.unshift({
+        date: new Date().toLocaleString(),
+        content: resultText
+    });
+    
+    // 最新10件に制限
+    history = history.slice(0, 10);
+    
+    // ローカルストレージに保存
+    localStorage.setItem('fortuneHistory', JSON.stringify(history));
+}
+
+document.getElementById('show-history-btn').addEventListener('click', () => {
+    const area = document.getElementById('history-area');
+    const list = document.getElementById('history-list');
+    
+    if (area.style.display === 'none') {
+        // 履歴を読み込んで表示
+        let history = JSON.parse(localStorage.getItem('fortuneHistory') || '[]');
+        if (history.length === 0) {
+            list.innerHTML = "<p>まだ履歴はありません。</p>";
+        } else {
+            list.innerHTML = history.map((item, index) => `
+                <div style="border-bottom:1px solid #eee; padding:10px;">
+                    <strong>${item.date}</strong><br>
+                    <p style="font-size:0.9em;">${item.content.replace(/\n/g, '<br>').substring(0, 60)}...</p>
+                </div>
+            `).join("");
+        }
+        area.style.display = 'block';
+    } else {
+        area.style.display = 'none';
     }
 });
