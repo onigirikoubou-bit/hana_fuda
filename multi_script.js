@@ -214,12 +214,3 @@ window.displayHistoryResult = function(index) {
     document.getElementById('history-area').style.display = 'none';
 };
 
-// リスト生成時の修正
-list.innerHTML = history.map((item, index) => `
-    <div style="border-bottom:1px solid #ccc; padding:10px;">
-        ${item.date}<br>
-        <button onclick="displayHistoryResult(${index})">この結果を見る</button>
-    </div>
-`).join("");
-
-
