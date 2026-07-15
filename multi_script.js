@@ -134,6 +134,13 @@ async function getFortuneFromAI(prompt, retries = 3) {
         }
         return await response.json();
     } catch (err) {
+        // ★ここを書き換える
+        console.error("エラー発生:", err);
+        
+        // 429エラー（API制限）かどうかの判定
+        if (err.status === 429 || (err.details && err.details.error && err.details.error.includes('429'))) {
+            throw new Error("API_LIMIT"); // 制限エラーを特別扱い
+        }
         throw err;
     }
 }

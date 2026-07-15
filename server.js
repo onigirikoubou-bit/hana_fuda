@@ -10,20 +10,29 @@ app.use(express.static(__dirname));
 
 const genAI = new GoogleGenerativeAI(process.env.API_KEY);
 
+const IS_DEBUG = true; // 開発中は true、本番公開時は false に変える
+
 app.post('/ask', async (req, res) => {
-  try {
     const { prompt } = req.body;
-    const model = genAI.getGenerativeModel({ model: "gemini-3.5-flash" });
-    const result = await model.generateContent(prompt);
-    res.json({ success: true, reply: result.response.text() }); // successフラグを追加
-  } catch (error) {
-    console.error("エラー:", error);
-    if (error.status === 503) {
-      res.status(503).json({ error: "ただいまAIが混雑しています。もう一度ボタンを押してみてください。" });
-    } else {
-      res.status(500).json({ error: "サーバーエラーが発生しました。" });
+
+    // 1. keep-alive 用の軽いリクエスト
+    if (prompt === "keep-alive") {
+        return res.status(200).json({ reply: "OK" });
     }
-  }
+
+    // 2. 開発テスト用の固定レスポンス
+    if (IS_DEBUG) {
+        return res.status(200).json({ 
+            reply: "【開発中テスト回答】\n今日はとても運が良いでしょう。すべての札があなたに微笑んでいます。新しい挑戦を恐れないでください。" 
+        });
+    }
+
+    // 3. 本番用：APIを叩く処理
+    try {
+        // ... ここで本来の API 呼び出し処理 ...
+    } catch (e) {
+        // ...
+    }
 });
 
 app.listen(3000, () => console.log('サーバーがポート3000で起動しました'));
