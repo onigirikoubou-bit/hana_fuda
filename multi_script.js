@@ -103,30 +103,34 @@ container.addEventListener('mouseup', () => {
                 const data = await getFortuneFromAI(generateFortunePrompt(selectedCards));
                 
                 if (data && data.reply) {
+                    // 履歴保存を実行
+            saveHistory(data.reply);
+            
                     resultArea.innerHTML = `
                         <div class="ai-reply">${data.reply.replace(/\n/g, '<br>')}</div>
                         <button id="reset-button" style="margin-top:20px;">もう一度占う</button>
                     `;
                     aiText.textContent = "鑑定完了";
 
-                    // ★履歴を保存する！
-                    saveHistory(fullText);
-
                     // リセットボタンの処理
                     document.getElementById('reset-button').addEventListener('click', () => {
                         selectedCards = [];
                         drawQueue = getRandomCards(3);
-                        aiResponse.innerHTML = ""; // 画面クリア
-                        for(let i = 0; i < targetCount; i++) {
-                            const slot = document.getElementById(`slot-${i}`);
-                            if(slot) {
-                                slot.style.backgroundImage = "none";
-                                slot.textContent = ""; // 必要に応じて表示を元に戻す
-                            }
-                        }
-                    });
-                }
-            } catch (err) {
+                        aiResponse.innerHTML = `
+                    <h3>総合運勢</h3>
+                    <p id="ai-text">準備が整いました。</p>
+                    <button id="fortune-button">AIに運勢を解釈してもらう</button>
+                    <div id="fortune-result-area"></div>
+                `;
+                // ※重要：再配置したボタンに再度イベントを紐付けるため、
+                // 上記コード（if (selectedCards.length === targetCount) { ... }）の
+                // 全体構造を関数化しておくのが理想ですが、まずはこれで動作を確認してみてください。
+                
+                // 初回読み込み時のイベント紐付けを再実行するための関数呼び出しが必要になる場合があります
+                location.reload(); // ← 確実に直すための手っ取り早い解決策（再読み込み）です
+            });
+        }
+    } catch (err) {
                 aiText.textContent = "現在混雑しています。もう一度ボタンを押して再試行してください。";
                 fortuneBtn.style.display = 'block';
             }
