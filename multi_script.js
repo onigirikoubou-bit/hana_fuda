@@ -104,7 +104,7 @@ container.addEventListener('mouseup', () => {
                 
                 if (data && data.reply) {
                     // 履歴保存を実行
-            saveHistory(data.reply);
+            saveHistory(data.reply, selectedCards); // 第2引数に selectedCards を追加
             
                     resultArea.innerHTML = `
                         <div class="ai-reply">${data.reply.replace(/\n/g, '<br>')}</div>
@@ -192,14 +192,11 @@ function saveHistory(resultText) {
     // 最新の結果を先頭に追加（日付付き）
     history.unshift({
         date: new Date().toLocaleString(),
-        content: resultText
+        content: resultText,
+        cardIds: cards.map(c => c.id) // カードのIDリストのみ保存
     });
     
-    // 最新10件に制限
-    history = history.slice(0, 10);
-    
-    // ローカルストレージに保存
-    localStorage.setItem('fortuneHistory', JSON.stringify(history));
+        localStorage.setItem('fortuneHistory', JSON.stringify(history.slice(0, 10)));
 }
 
 document.getElementById('show-history-btn').addEventListener('click', () => {
@@ -224,3 +221,28 @@ document.getElementById('show-history-btn').addEventListener('click', () => {
         area.style.display = 'none';
     }
 });
+
+window.displayHistoryResult = function(index) {
+    let history = JSON.parse(localStorage.getItem('fortuneHistory') || '[]');
+    let selected = history[index];
+    
+    // 1. 鑑定結果の表示
+    const resultArea = document.getElementById('fortune-result-area');
+    resultArea.innerHTML = `
+        <div class="ai-reply"><h3>過去の鑑定結果 (${selected.date})</h3>${selected.content.replace(/\n/g, '<br>')}</div>
+        <button onclick="location.reload()" style="margin-top:20px;">閉じて最初から占う</button>
+    `;
+    
+    // 2. カード画像（スロット）の復元
+    selected.cardIds.forEach((id, i) => {
+        const found = hanafudaData.find(c => c.id === id);
+        const slot = document.getElementById(`slot-${i}`);
+        if (slot && found) {
+            slot.style.backgroundImage = "url('hanafuda.png')";
+            slot.style.backgroundPosition = `-${found.col * 123}px -${found.row * 185}px`;
+            slot.textContent = "";
+        }
+    });
+
+    document.getElementById('history-area').style.display = 'none';
+};
