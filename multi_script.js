@@ -81,7 +81,6 @@ container.addEventListener('mouseup', () => {
             <div id="fortune-result-area"></div>
         `;
 
-        // ボタンのクリックイベント
         document.getElementById('fortune-button').addEventListener('click', async () => {
             const aiText = document.getElementById('ai-text');
             const resultArea = document.getElementById('fortune-result-area');
@@ -94,17 +93,31 @@ container.addEventListener('mouseup', () => {
                 const data = await getFortuneFromAI(generateFortunePrompt(selectedCards));
                 
                 if (data && data.reply) {
-                    // 【修正】札ごとの3行を表示する処理を完全に削除しました
                     resultArea.innerHTML = `
                         <div class="ai-reply">${data.reply.replace(/\n/g, '<br>')}</div>
+                        <button id="reset-button" style="margin-top:20px;">もう一度占う</button>
                     `;
                     aiText.textContent = "鑑定完了";
+
+                    // リセットボタンの処理
+                    document.getElementById('reset-button').addEventListener('click', () => {
+                        selectedCards = [];
+                        drawQueue = getRandomCards(3);
+                        aiResponse.innerHTML = ""; // 画面クリア
+                        for(let i = 0; i < targetCount; i++) {
+                            const slot = document.getElementById(`slot-${i}`);
+                            if(slot) {
+                                slot.style.backgroundImage = "none";
+                                slot.textContent = ""; // 必要に応じて表示を元に戻す
+                            }
+                        }
+                    });
                 }
             } catch (err) {
                 aiText.textContent = "現在混雑しています。もう一度ボタンを押して再試行してください。";
                 fortuneBtn.style.display = 'block';
             }
-        }); // ← ボタンのクリックイベントを閉じる
+        });
     } // ← if (selectedCards.length === targetCount) を閉じる
 }); // ← containerのmouseupを閉じる
 
