@@ -10,7 +10,7 @@ app.use(express.static(__dirname));
 
 const genAI = new GoogleGenerativeAI(process.env.API_KEY);
 
-const IS_DEBUG = true; // 開発中は true、本番公開時は false に変える
+const IS_DEBUG = false; // 開発中は true、本番公開時は false に変える
 
 app.post('/ask', async (req, res) => {
     const { prompt } = req.body;
