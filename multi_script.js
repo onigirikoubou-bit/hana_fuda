@@ -50,7 +50,7 @@ ${cardsText}
 ・[願望]：(ここに統合された内容)
 ・[待ち人]：(ここに統合された内容)
 ・[失せ物]：(ここに統合された内容)
-※その他、重要な項目があれば適宜加えてください。そして最後に、前向きになれるようなメッセージを偶数日には短歌風に、奇数日には詩的な文章でまとめてください。
+※その他、重要な項目があれば適宜加えてください。そして最後に、前向きになれるようなメッセージを、日本時間の偶数日には短歌風に、奇数日には詩的な文章でまとめてください。
 `;
 }
 
@@ -92,12 +92,9 @@ container.addEventListener('mouseup', () => {
                 const data = await getFortuneFromAI(generateFortunePrompt(selectedCards));
                 
                 if (data && data.reply) {
-                    let fortuneHtml = selectedCards.map(c => `<p><strong>${c.name}：</strong> ${JSON.stringify(c.fortune)}</p>`).join("");
+                    // 【修正】札ごとの3行を表示する処理を完全に削除しました
                     resultArea.innerHTML = `
                         <div class="ai-reply">${data.reply.replace(/\n/g, '<br>')}</div>
-                        <hr>
-                        <h3>札ごとのメッセージ</h3>
-                        ${fortuneHtml}
                     `;
                     aiText.textContent = "鑑定完了";
                 }
@@ -142,8 +139,11 @@ document.addEventListener('click', async (event) => {
     if (event.target && event.target.id === 'fortune-exec-btn') {
         const resultArea = document.getElementById('ai-response');
         if (resultArea) resultArea.innerText = "鑑定中...";
+        
         try {
-            const data = await getFortuneFromAI("花札で3枚の札を引きました。それぞれの意味と、総合的な運勢を占ってください。");
+            // ★ここを修正：上で定義した関数を呼び出すように変更
+            const data = await getFortuneFromAI(generateFortunePrompt(selectedCards));
+            
             if (data && data.reply && resultArea) {
                 resultArea.innerHTML = data.reply.replace(/\n/g, '<br>');
             }
