@@ -248,26 +248,23 @@ window.displayHistoryContent = function(index) {
         resultArea.style.display = 'block';
         
         // カード表示用のHTMLを先に作成
-        let cardsHtml = '<div style="display:flex; gap:10px; margin:10px 0; height:185px;">';
-        
-        if (item.cards && Array.isArray(item.cards)) {
-            item.cards.forEach(card => {
-                const col = parseInt(card.col) || 0;
-                const row = parseInt(card.row) || 0;
-                console.log("デバッグ中 - カードデータ:", card); // ★これで何がundefinedか分かります
-                
-                cardsHtml += `
-                    <div style="
-                        width: 107px; 
-                        height: 169px; 
-                        background-image: url('hanafuda.png'); 
-                        background-position: -${col * 123}px -${row * 185}px;
-                        border: 1px solid #ccc;
-                        flex-shrink: 0;
-                        display: inline-block;
-                        background-repeat: no-repeat;">
-                    </div>`;
-            });
+        let cardsHtml = '<div style="display:flex; gap:10px; margin:10px 0; height:169px; overflow:hidden;">'; // 余白防止に overflow:hidden を追加
+
+item.cards.forEach(card => {
+    const col = parseInt(card.col) || 0;
+    const row = parseInt(card.row) || 0;
+    
+    cardsHtml += `
+        <div style="
+            width: 107px; 
+            height: 169px; 
+            background-image: url('hanafuda.png'); 
+            background-position: -${col * 107}px -${row * 169}px;
+            border: 1px solid #ccc;
+            flex-shrink: 0;
+            background-repeat: no-repeat;">
+        </div>`;
+});
         }
         cardsHtml += '</div>';
 
