@@ -220,38 +220,37 @@ function updateHistory(content) {
 
 function renderHistory() {
     const historyList = document.getElementById('history-list');
-    if (!historyList) return; // エレメントがなければ何もしない
+    if (!historyList) return;
     
     const history = JSON.parse(localStorage.getItem('fortuneHistory') || '[]');
     
-    historyList.innerHTML = ''; // 一旦クリア
-    
-    history.forEach(item => {
-        // renderHistory 関数の div 生成部分をこう変えてみてください
-const div = document.createElement('div');
-div.style.cursor = 'pointer';
-div.style.padding = '10px';
-div.style.border = '1px solid #000'; // 枠線を表示
-div.style.marginTop = '5px';
-div.style.backgroundColor = '#f9f9f9'; // 背景色追加
-div.innerText = `${item.date} の鑑定`;
-
-        // クリックイベント：履歴をクリックしたら全文を resultArea に表示
-        div.addEventListener('click', () => {
-    console.log("履歴がクリックされました！"); // これが出るか確認
-    const resultArea = document.getElementById('result-area');
-    console.log("結果エリア:", resultArea); // これが null でないか確認
-
-    if (resultArea) {
-        resultArea.innerHTML = `<div class="ai-reply">${item.content.replace(/\n/g, '<br>')}</div>`;
-    } else {
-        alert("結果表示エリアが見つかりません！");
-    }
-});
-
-        historyList.appendChild(div);
+    // HTMLの文字列を組み立てる
+    let html = '';
+    history.forEach((item, index) => {
+        // 【重要】onclickをHTML文字列として埋め込む（これで確実に動きます）
+        html += `
+            <div style="cursor: pointer; padding: 8px; border-bottom: 1px solid #eee;" 
+                 onclick="displayHistoryContent(${index})">
+                ${item.date} の鑑定
+            </div>`;
     });
+    
+    historyList.innerHTML = html;
 }
+
+// 履歴をクリックしたときに呼び出される関数をグローバルに定義
+window.displayHistoryContent = function(index) {
+    const history = JSON.parse(localStorage.getItem('fortuneHistory') || '[]');
+    const item = history[index];
+    const resultArea = document.getElementById('result-area');
+    
+    if (resultArea && item) {
+        resultArea.innerHTML = `<div class="ai-reply">${item.content.replace(/\n/g, '<br>')}</div>`;
+        console.log("表示成功:", item.date);
+    } else {
+        console.error("表示失敗: result-areaが見つかりません");
+    }
+};
 
 // ページ読み込み時に過去の履歴を表示
 window.addEventListener('DOMContentLoaded', renderHistory);
