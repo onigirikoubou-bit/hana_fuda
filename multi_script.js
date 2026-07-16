@@ -313,5 +313,32 @@ window.displayHistoryContent = function(index) {
     }
 };
 
+// 【修正案】fetch を送る部分
+async function askAI(message) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10秒でタイムアウト
+
+    try {
+        aiText.textContent = "AI鑑定中...（初回は少し時間がかかります）";
+        
+        const response = await fetch('/ask', {
+            method: 'POST',
+            signal: controller.signal, // タイムアウト監視をセット
+            body: JSON.stringify({ message })
+        });
+        
+        clearTimeout(timeoutId);
+        const data = await response.json();
+        // ...以下、結果を表示する処理...
+
+    } catch (err) {
+        if (err.name === 'AbortError') {
+            aiText.textContent = "サーバーが起動しています。もう一度ボタンを押してください。";
+        } else {
+            aiText.textContent = "エラーが発生しました。";
+        }
+    }
+}
+
 // ページ読み込み時に過去の履歴を表示
 // window.addEventListener('DOMContentLoaded', renderHistory);
