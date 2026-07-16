@@ -258,8 +258,8 @@ window.displayHistoryContent = function(index) {
     
     // 重要なのは「余白（gap）を含めない」ことです
     // 札サイズは固定で計算します
-    const posX = col * 107;
-    const posY = row * 169;
+    const posX = col * 123;
+    const posY = row * 185;
 
     cardsHtml += `
         <div style="
