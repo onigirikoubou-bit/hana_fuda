@@ -202,12 +202,18 @@ document.addEventListener('DOMContentLoaded', () => {
 function updateHistory(content, cards) {
     const history = JSON.parse(localStorage.getItem('fortuneHistory') || '[]');
     
-    // カード情報も含めて保存
+    // カード情報から、col と row だけを確実に抽出して新しいオブジェクトを作る
+    const safeCards = cards.map(card => ({
+        col: card.col,
+        row: card.row
+    }));
+    
     const newItem = {
         date: new Date().toLocaleString(),
         content: content,
-        cards: cards // ★追加
+        cards: safeCards // ★これで undefined 問題を回避できます
     };
+    
     history.unshift(newItem);
     localStorage.setItem('fortuneHistory', JSON.stringify(history));
     renderHistory();
