@@ -109,6 +109,9 @@ container.addEventListener('mouseup', () => {
                     `;
                     aiText.textContent = "鑑定完了";
 
+                    // ★追加：履歴に保存して画面を更新する
+                    updateHistory(data.reply);
+
                     // リセットボタンの処理
                     document.getElementById('reset-button').addEventListener('click', () => {
                         selectedCards = [];
@@ -146,7 +149,7 @@ async function getFortuneFromAI(prompt) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ prompt: prompt })
         });
-
+        
         if (!response.ok) {
             throw new Error(`サーバーエラー: ${response.status}`);
         }
@@ -176,3 +179,72 @@ document.addEventListener('click', async (event) => {
         }
     }
 });
+
+// ページ読み込み時に履歴リストのクリック設定を行う
+document.addEventListener('DOMContentLoaded', () => {
+    const historyList = document.getElementById('history-list'); // 履歴リストのIDを指定してください
+    const resultArea = document.getElementById('result-area');   // 結果を表示するエリアのID
+
+    if (historyList) {
+        historyList.addEventListener('click', (event) => {
+            // クリックされた要素が履歴項目（例: liタグ）であるか確認
+            if (event.target.tagName === 'LI') {
+                const fullText = event.target.getAttribute('data-fulltext');
+                if (fullText && resultArea) {
+                    resultArea.innerText = fullText;
+                }
+            }
+        });
+    }
+});
+
+// --- 履歴管理用関数（multi_script.js の末尾に追加） ---
+
+function updateHistory(content) {
+    // 1. localStorageから既存データを取得
+    const history = JSON.parse(localStorage.getItem('fortuneHistory') || '[]');
+    
+    // 2. 新しいデータを追加
+    const newItem = {
+        date: new Date().toLocaleString(),
+        content: content
+    };
+    history.unshift(newItem); // 最新を先頭へ
+    
+    // 3. localStorageに保存
+    localStorage.setItem('fortuneHistory', JSON.stringify(history));
+
+    // 4. 画面を更新
+    renderHistory();
+}
+
+function renderHistory() {
+    const historyList = document.getElementById('history-list');
+    if (!historyList) return; // エレメントがなければ何もしない
+    
+    const history = JSON.parse(localStorage.getItem('fortuneHistory') || '[]');
+    
+    historyList.innerHTML = ''; // 一旦クリア
+    
+    history.forEach(item => {
+        const div = document.createElement('div');
+        div.style.cursor = 'pointer';
+        div.style.padding = '8px';
+        div.style.borderBottom = '1px solid #eee';
+        div.innerText = `${item.date} の鑑定`;
+
+        // クリックイベント：履歴をクリックしたら全文を resultArea に表示
+        div.addEventListener('click', () => {
+            const resultArea = document.getElementById('result-area');
+            if (resultArea) {
+                // 改行コードを反映するために innerHTML を使用
+                resultArea.innerHTML = `<div class="ai-reply">${item.content.replace(/\n/g, '<br>')}</div>`;
+            }
+        });
+
+        historyList.appendChild(div);
+    });
+}
+
+// ページ読み込み時に過去の履歴を表示
+window.addEventListener('DOMContentLoaded', renderHistory);
