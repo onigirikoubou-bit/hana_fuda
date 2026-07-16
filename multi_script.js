@@ -13,13 +13,13 @@ fetch('hanafuda_data.json')
 
     // multi_script.js の一番上のどこかに追記
 window.addEventListener('load', () => {
-    // サーバーをこっそり起こしておくための軽いリクエスト
-    fetch('/ask', { 
-        method: 'POST', 
+    fetch('/ask', {
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt: "keep-alive" }) // 軽いメッセージ
-    }).catch(err => console.log("起動準備完了"));
+        body: JSON.stringify({ prompt: "keep-alive" })
+    });
 });
+
 
 // シャッフル関数
 function getRandomCards(count) {
@@ -146,15 +146,20 @@ async function getFortuneFromAI(prompt, retries = 3) {
             body: JSON.stringify({ prompt: prompt })
         });
 
-        if (response.status === 503 && retries > 0) {
+        // 503 (過負荷) だけでなく、500 (サーバー内部エラー) でもリトライする
+        // 多くのAPIエラーは 500 で返ってくるため、ここを広げると安定します
+        if ((response.status === 503 || response.status === 500) && retries > 0) {
+            console.log(`再試行します... あと ${retries} 回`);
             await new Promise(resolve => setTimeout(resolve, 2000));
             return getFortuneFromAI(prompt, retries - 1);
         }
 
         if (!response.ok) throw new Error('サーバーエラー');
         return await response.json();
+        
     } catch (err) {
         console.error("エラー発生:", err);
+        // 通信自体が失敗した場合（ネットワーク瞬断など）
         if(retryBtn) retryBtn.style.display = 'block';
         throw err;
     }

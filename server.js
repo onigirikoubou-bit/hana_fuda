@@ -36,12 +36,9 @@ app.post('/ask', async (req, res) => {
         return res.status(200).json({ reply: text });
 
     } catch (error) {
-        // ★ここが重要：エラーが起きたら必ずエラー内容をログに出し、ブラウザに応答を返す
-        console.error("AI APIエラー詳細:", error);
-        return res.status(500).json({ 
-            reply: "申し訳ありません。現在占い機能が利用できません（エラーが発生しました）。" 
-        });
-    }
+    console.error("【重大エラー】:", error); // これがログに詳細を出します
+    return res.status(500).json({ error: "サーバー内部エラーです", details: error.message });
+}
 });
 
 app.listen(3000, () => console.log('サーバーがポート3000で起動しました'));
