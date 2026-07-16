@@ -110,7 +110,7 @@ container.addEventListener('mouseup', () => {
                     aiText.textContent = "鑑定完了";
 
                     // ★追加：履歴に保存して画面を更新する
-                    updateHistory(data.reply);
+                    updateHistory(data.reply, selectedCards);
 
                     // リセットボタンの処理
                     document.getElementById('reset-button').addEventListener('click', () => {
@@ -199,22 +199,17 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // --- 履歴管理用関数（multi_script.js の末尾に追加） ---
-
-function updateHistory(content) {
-    // 1. localStorageから既存データを取得
+function updateHistory(content, cards) {
     const history = JSON.parse(localStorage.getItem('fortuneHistory') || '[]');
     
-    // 2. 新しいデータを追加
+    // カード情報も含めて保存
     const newItem = {
         date: new Date().toLocaleString(),
-        content: content
+        content: content,
+        cards: cards // ★追加
     };
-    history.unshift(newItem); // 最新を先頭へ
-    
-    // 3. localStorageに保存
+    history.unshift(newItem);
     localStorage.setItem('fortuneHistory', JSON.stringify(history));
-
-    // 4. 画面を更新
     renderHistory();
 }
 
@@ -242,30 +237,31 @@ function renderHistory() {
 window.displayHistoryContent = function(index) {
     const history = JSON.parse(localStorage.getItem('fortuneHistory') || '[]');
     const item = history[index];
-    
-    // result-area が確実に存在するかを再確認
     const resultArea = document.getElementById('result-area');
     
     if (resultArea && item) {
-        // 念のためスタイルを強制的に可視化
         resultArea.style.display = 'block';
         
-        // 内容を書き込み
+        // カードを表示するエリアを作成
+        let cardsHtml = '<div style="display:flex; gap:10px; margin:10px 0;">';
+        item.cards.forEach(card => {
+            // スロットと同じ表示スタイルを再現
+            cardsHtml += `
+                <div style="width:123px; height:185px; 
+                            background-image:url('hanafuda.png'); 
+                            background-position:-${card.col * 123}px -${card.row * 185}px;
+                            border:1px solid #ccc;">
+                </div>`;
+        });
+        cardsHtml += '</div>';
+
         resultArea.innerHTML = `
             <div class="ai-reply">${item.content.replace(/\n/g, '<br>')}</div>
+            ${cardsHtml}
             <button id="reset-button-history" style="margin-top:20px;">もう一度占う</button>
         `;
-        
-        // 履歴表示用にも「もう一度占う」ボタンを設置し、イベントを付与
-        document.getElementById('reset-button-history').addEventListener('click', () => {
-            // ここで元の「もう一度占う」ボタンと同じ初期化処理（location.reload等）を呼ぶか、
-            // 画面をリセットする処理を書いてください
-            location.reload(); 
-        });
 
-        console.log("表示成功:", item.date);
-    } else {
-        console.error("表示失敗: result-areaが見つかりません");
+        document.getElementById('reset-button-history').addEventListener('click', () => location.reload());
     }
 };
 
@@ -280,6 +276,37 @@ document.getElementById('show-history-btn').addEventListener('click', () => {
         renderHistory(); 
     }
 });
+
+window.displayHistoryContent = function(index) {
+    const history = JSON.parse(localStorage.getItem('fortuneHistory') || '[]');
+    const item = history[index];
+    const resultArea = document.getElementById('result-area');
+    
+    if (resultArea && item) {
+        resultArea.style.display = 'block';
+        
+        // 1. テキストとリセットボタンを表示
+        resultArea.innerHTML = `
+            <div class="ai-reply">${item.content.replace(/\n/g, '<br>')}</div>
+            <div id="history-cards-area" style="margin: 10px 0;"></div>
+            <button id="reset-button-history" style="margin-top:20px;">もう一度占う</button>
+        `;
+
+        // 2. ★追加：保存されているカードを表示
+        const cardsArea = document.getElementById('history-cards-area');
+        if (item.cards && Array.isArray(item.cards)) {
+            item.cards.forEach(card => {
+                const img = document.createElement('img');
+                img.src = card.image; // カードの画像URLなど
+                img.style.width = "80px"; // お好みのサイズに調整
+                img.style.margin = "5px";
+                cardsArea.appendChild(img);
+            });
+        }
+        
+        document.getElementById('reset-button-history').addEventListener('click', () => location.reload());
+    }
+};
 
 // ページ読み込み時に過去の履歴を表示
 // window.addEventListener('DOMContentLoaded', renderHistory);
