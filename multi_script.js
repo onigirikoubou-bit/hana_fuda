@@ -322,11 +322,16 @@ async function askAI(message) {
 
 // 一番下にこれがあることを確認
 document.getElementById('show-history-btn').addEventListener('click', () => {
+    // 1. 履歴エリアを表示する
     const historyArea = document.getElementById('history-area');
     if (historyArea) {
-        historyArea.style.display = 'block'; 
-        renderHistory(); 
+        historyArea.style.display = 'block';
     }
+    
+    // 2. リストを更新・表示する
+    renderHistory();
+    
+    console.log("履歴ボタンが押され、renderHistoryを実行しました");
 });
 
 // ページ読み込み時に過去の履歴を表示
