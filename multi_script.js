@@ -254,6 +254,7 @@ window.displayHistoryContent = function(index) {
             item.cards.forEach(card => {
                 const col = parseInt(card.col) || 0;
                 const row = parseInt(card.row) || 0;
+                console.log("デバッグ中 - カードデータ:", card); // ★これで何がundefinedか分かります
                 
                 cardsHtml += `
                     <div style="
