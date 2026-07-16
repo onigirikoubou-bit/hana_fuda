@@ -243,17 +243,23 @@ window.displayHistoryContent = function(index) {
         resultArea.style.display = 'block';
         
         // カードを表示するエリアを作成
-        let cardsHtml = '<div style="display:flex; gap:10px; margin:10px 0;">';
         item.cards.forEach(card => {
-            // スロットと同じ表示スタイルを再現
-            cardsHtml += `
-                <div style="width:123px; height:185px; 
-                            background-image:url('hanafuda.png'); 
-                            background-position:-${card.col * 123}px -${card.row * 185}px;
-                            border:1px solid #ccc;">
-                </div>`;
-        });
-        cardsHtml += '</div>';
+    // 確実に数値として計算させるために parseInt を使用
+    const col = parseInt(card.col);
+    const row = parseInt(card.row);
+    
+    cardsHtml += `
+        <div style="
+            width: 123px; 
+            height: 185px; 
+            background-image: url('hanafuda.png'); 
+            background-position: -${col * 123}px -${row * 185}px;
+            border: 1px solid #ccc;
+            flex-shrink: 0;
+            display: inline-block;">
+        </div>`;
+});
+cardsHtml += '</div>';
 
         resultArea.innerHTML = `
             <div class="ai-reply">${item.content.replace(/\n/g, '<br>')}</div>
