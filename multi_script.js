@@ -289,6 +289,7 @@ window.displayHistoryContent = function(index) {
     
     console.log("表示成功:", item.date);
 };
+}
 
 // 【修正案】fetch を送る部分
 async function askAI(message) {
@@ -330,6 +331,3 @@ document.getElementById('show-history-btn').addEventListener('click', () => {
     
     console.log("履歴ボタンが押され、renderHistoryを実行しました");
 });
-
-// ページ読み込み時に過去の履歴を表示
-// window.addEventListener('DOMContentLoaded', renderHistory);
