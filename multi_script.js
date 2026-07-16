@@ -126,6 +126,26 @@ async function getFortuneFromAI(prompt, retries = 3) {
             body: JSON.stringify({ prompt: prompt }) 
         });
 
+            console.log("1. 通信を開始します..."); // これが表示されるか確認
+    
+    try {
+        const response = await fetch('/ask', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ prompt: prompt })
+        });
+        
+        console.log("2. サーバーから応答がありました。"); // これが出るか確認
+        
+        const data = await response.json();
+        console.log("3. 応答の内容:", data); // これが出るか確認
+        
+        return data;
+    } catch (err) {
+        console.log("エラー発生:", err);
+    }
+}
+
         // 応答をチェック
         if (!response.ok) {
             const errorText = await response.text(); // サーバーからのエラー内容を取得
