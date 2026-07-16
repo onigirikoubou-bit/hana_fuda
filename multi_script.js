@@ -239,7 +239,6 @@ function renderHistory() {
     historyList.innerHTML = html;
 }
 
-// 履歴クリック用のグローバル関数
 window.displayHistoryContent = function(index) {
     const history = JSON.parse(localStorage.getItem('fortuneHistory') || '[]');
     const item = history[index];
@@ -248,80 +247,48 @@ window.displayHistoryContent = function(index) {
     if (resultArea && item) {
         resultArea.style.display = 'block';
         
-        // カードを表示するエリアを作成
-        item.cards.forEach(card => {
-    // 確実に数値として計算させるために parseInt を使用
-    const col = parseInt(card.col);
-    const row = parseInt(card.row);
-    
-    cardsHtml += `
-        <div style="
-            width: 123px; 
-            height: 185px; 
-            background-image: url('hanafuda.png'); 
-            background-position: -${col * 123}px -${row * 185}px;
-            border: 1px solid #ccc;
-            flex-shrink: 0;
-            display: inline-block;">
-        </div>`;
-});
-cardsHtml += '</div>';
+        // カード表示用のHTMLを先に作成
+        let cardsHtml = '<div style="display:flex; gap:10px; margin:10px 0; height:185px;">';
+        
+        if (item.cards && Array.isArray(item.cards)) {
+            item.cards.forEach(card => {
+                const col = parseInt(card.col) || 0;
+                const row = parseInt(card.row) || 0;
+                
+                cardsHtml += `
+                    <div style="
+                        width: 123px; 
+                        height: 185px; 
+                        background-image: url('hanafuda.png'); 
+                        background-position: -${col * 123}px -${row * 185}px;
+                        border: 1px solid #ccc;
+                        flex-shrink: 0;
+                        display: inline-block;
+                        background-repeat: no-repeat;">
+                    </div>`;
+            });
+        }
+        cardsHtml += '</div>';
 
+        // HTMLをセット
         resultArea.innerHTML = `
             <div class="ai-reply">${item.content.replace(/\n/g, '<br>')}</div>
             ${cardsHtml}
             <button id="reset-button-history" style="margin-top:20px;">もう一度占う</button>
         `;
 
+        // ボタンのイベント登録
         document.getElementById('reset-button-history').addEventListener('click', () => location.reload());
-    }
-};
 
-// --- 履歴表示ボタンのイベント設定（一番下に追加） ---
-
-document.getElementById('show-history-btn').addEventListener('click', () => {
-    const historyArea = document.getElementById('history-area');
-    if (historyArea) {
-        // 表示を切り替える
-        historyArea.style.display = 'block'; 
-        // 履歴を描画する
-        renderHistory(); 
-    }
-});
-
-window.displayHistoryContent = function(index) {
-    const history = JSON.parse(localStorage.getItem('fortuneHistory') || '[]');
-    const item = history[index];
-    const resultArea = document.getElementById('result-area');
-    
-    if (resultArea && item) {
-        resultArea.style.display = 'block';
-        
-        // 1. テキストとリセットボタンを表示
-        resultArea.innerHTML = `
-            <div class="ai-reply">${item.content.replace(/\n/g, '<br>')}</div>
-            <div id="history-cards-area" style="margin: 10px 0;"></div>
-            <button id="reset-button-history" style="margin-top:20px;">もう一度占う</button>
-        `;
-
-        // 2. ★追加：保存されているカードを表示
-        const cardsArea = document.getElementById('history-cards-area');
-        if (item.cards && Array.isArray(item.cards)) {
-            item.cards.forEach(card => {
-                const img = document.createElement('img');
-                img.src = card.image; // カードの画像URLなど
-                img.style.width = "80px"; // お好みのサイズに調整
-                img.style.margin = "5px";
-                cardsArea.appendChild(img);
-            });
-        }
-        
-        document.getElementById('reset-button-history').addEventListener('click', () => location.reload());
-    // ★追加：画面の先頭へスムーズにスクロール
+        // スクロール処理
         window.scrollTo({
             top: 0,
-            behavior: 'smooth' // 'auto' にすると一瞬で移動します
+            behavior: 'smooth'
         });
+        
+        console.log("表示成功:", item.date);
+    } else {
+        console.error("表示失敗: result-areaが見つからないか、アイテムがありません");
     }
 };
 
