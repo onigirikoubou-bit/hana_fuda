@@ -176,21 +176,3 @@ document.addEventListener('click', async (event) => {
         }
     }
 });
-
-// ページ読み込み時に履歴リストのクリック設定を行う
-document.addEventListener('DOMContentLoaded', () => {
-    const historyList = document.getElementById('history-list'); // 履歴リストのIDを指定してください
-    const resultArea = document.getElementById('result-area');   // 結果を表示するエリアのID
-
-    if (historyList) {
-        historyList.addEventListener('click', (event) => {
-            // クリックされた要素が履歴項目（例: liタグ）であるか確認
-            if (event.target.tagName === 'LI') {
-                const fullText = event.target.getAttribute('data-fulltext');
-                if (fullText && resultArea) {
-                    resultArea.innerText = fullText;
-                }
-            }
-        });
-    }
-});
