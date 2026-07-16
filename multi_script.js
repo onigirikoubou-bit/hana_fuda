@@ -135,9 +135,10 @@ container.addEventListener('mouseup', () => {
 const retryBtn = document.getElementById('retry-btn');
 let lastPrompt = "";
 
-async function getFortuneFromAI(prompt, retries = 3) {
-    lastPrompt = prompt; 
-    if(retryBtn) retryBtn.style.display = 'none';
+async function getFortuneFromAI(prompt) {
+    lastPrompt = prompt;
+    // エラー時の再試行ボタン制御（あれば）
+    if (typeof retryBtn !== 'undefined' && retryBtn) retryBtn.style.display = 'none';
 
     try {
         const response = await fetch('/ask', {
@@ -146,22 +147,15 @@ async function getFortuneFromAI(prompt, retries = 3) {
             body: JSON.stringify({ prompt: prompt })
         });
 
-        // 503 (過負荷) だけでなく、500 (サーバー内部エラー) でもリトライする
-        // 多くのAPIエラーは 500 で返ってくるため、ここを広げると安定します
-        if ((response.status === 503 || response.status === 500) && retries > 0) {
-            console.log(`再試行します... あと ${retries} 回`);
-            await new Promise(resolve => setTimeout(resolve, 2000));
-            return getFortuneFromAI(prompt, retries - 1);
+        if (!response.ok) {
+            throw new Error(`サーバーエラー: ${response.status}`);
         }
 
-        if (!response.ok) throw new Error('サーバーエラー');
         return await response.json();
-        
     } catch (err) {
-        console.error("エラー発生:", err);
-        // 通信自体が失敗した場合（ネットワーク瞬断など）
-        if(retryBtn) retryBtn.style.display = 'block';
-        throw err;
+        console.error("占い取得エラー:", err);
+        if (typeof retryBtn !== 'undefined' && retryBtn) retryBtn.style.display = 'block';
+        throw err; // エラーを呼び出し元に伝える
     }
 }
 
@@ -180,5 +174,23 @@ document.addEventListener('click', async (event) => {
         } catch (error) {
             if (resultArea) resultArea.innerText = "鑑定中にエラーが発生しました。";
         }
+    }
+});
+
+// ページ読み込み時に履歴リストのクリック設定を行う
+document.addEventListener('DOMContentLoaded', () => {
+    const historyList = document.getElementById('history-list'); // 履歴リストのIDを指定してください
+    const resultArea = document.getElementById('result-area');   // 結果を表示するエリアのID
+
+    if (historyList) {
+        historyList.addEventListener('click', (event) => {
+            // クリックされた要素が履歴項目（例: liタグ）であるか確認
+            if (event.target.tagName === 'LI') {
+                const fullText = event.target.getAttribute('data-fulltext');
+                if (fullText && resultArea) {
+                    resultArea.innerText = fullText;
+                }
+            }
+        });
     }
 });
