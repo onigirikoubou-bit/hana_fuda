@@ -35,9 +35,14 @@ app.post('/ask', async (req, res) => {
         console.log("API応答受信完了");
         return res.status(200).json({ reply: text });
 
-    } catch (error) {
-    console.error("【重大エラー】:", error); // これがログに詳細を出します
-    return res.status(500).json({ error: "サーバー内部エラーです", details: error.message });
+    // server.js の catch 部分をこのように修正
+} catch (error) {
+    if (error.status === 429) {
+        console.error("【API制限】リクエスト回数上限に達しました。");
+        return res.status(429).json({ reply: "現在、利用者が多いため一時的に制限されています。少し時間を置いてお試しください。" });
+    }
+    console.error("【重大エラー】:", error);
+    return res.status(500).json({ reply: "サーバーエラーが発生しました。" });
 }
 });
 
