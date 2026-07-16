@@ -244,35 +244,39 @@ window.displayHistoryContent = function(index) {
     const item = history[index];
     const resultArea = document.getElementById('result-area');
     
+    // ここで resultArea と item が存在するかチェック
     if (resultArea && item) {
         resultArea.style.display = 'block';
         
         // カード表示用のHTMLを先に作成
-        let cardsHtml = '<div style="display:flex; gap:10px; margin:10px 0; height:169px; overflow:hidden;">'; // 余白防止に overflow:hidden を追加
-
-item.cards.forEach(card => {
-    const col = parseInt(card.col) || 0;
-    const row = parseInt(card.row) || 0;
-    
-    cardsHtml += `
-        <div style="
-            width: 107px; 
-            height: 169px; 
-            background-image: url('hanafuda.png'); 
-            background-position: -${col * 107}px -${row * 169}px;
-            border: 1px solid #ccc;
-            flex-shrink: 0;
-            background-repeat: no-repeat;">
-        </div>`;
-});
+        let cardsHtml = '<div style="display:flex; gap:10px; margin:10px 0; height:169px; overflow:hidden;">';
+        
+        if (item.cards && Array.isArray(item.cards)) {
+            item.cards.forEach(card => {
+                const col = parseInt(card.col) || 0;
+                const row = parseInt(card.row) || 0;
+                
+                cardsHtml += `
+                    <div style="
+                        width: 107px; 
+                        height: 169px; 
+                        background-image: url('hanafuda.png'); 
+                        background-position: -${col * 107}px -${row * 169}px;
+                        border: 1px solid #ccc;
+                        flex-shrink: 0;
+                        background-repeat: no-repeat;">
+                    </div>`;
+            });
         }
         cardsHtml += '</div>';
 
         // HTMLをセット
         resultArea.innerHTML = `
-            <div class="ai-reply">${item.content.replace(/\n/g, '<br>')}</div>
-            ${cardsHtml}
-            <button id="reset-button-history" style="margin-top:20px;">もう一度占う</button>
+            <div style="max-width: 400px; margin: 0 auto;">
+                <div class="ai-reply">${item.content.replace(/\n/g, '<br>')}</div>
+                ${cardsHtml}
+                <button id="reset-button-history" style="margin-top:20px;">もう一度占う</button>
+            </div>
         `;
 
         // ボタンのイベント登録
@@ -285,7 +289,9 @@ item.cards.forEach(card => {
         });
         
         console.log("表示成功:", item.date);
-    } else {
+
+    } else { 
+        // この else は、一番上の if (resultArea && item) に対応しています
         console.error("表示失敗: result-areaが見つからないか、アイテムがありません");
     }
 };
