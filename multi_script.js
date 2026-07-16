@@ -116,24 +116,34 @@ const retryBtn = document.getElementById('retry-btn');
 let lastPrompt = "";
 
 // multi_script.js の送信処理部分をこのように書き換えてください
-async function getFortuneFromAI(prompt) {
-    console.log("1. 通信を開始します..."); // これが表示されるか確認
-    
+async function getFortuneFromAI(prompt, retries = 3) {
     try {
         const response = await fetch('/ask', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ prompt: prompt })
+            // ★ポイント：JSON.stringifyは改行を適切にエスケープ処理しますが、
+            // 万が一のために、プロンプト文字列が空でないか確認
+            body: JSON.stringify({ prompt: prompt }) 
         });
+
         
-        console.log("2. サーバーから応答がありました。"); // これが出るか確認
-        
-        const data = await response.json();
-        console.log("3. 応答の内容:", data); // これが出るか確認
-        
-        return data;
+
+        // 応答をチェック
+        if (!response.ok) {
+            const errorText = await response.text(); // サーバーからのエラー内容を取得
+            console.error("サーバー応答エラー:", errorText);
+            throw new Error(`サーバーエラー: ${response.status}`);
+        }
+        return await response.json();
     } catch (err) {
-        console.log("エラー発生:", err);
+        // ★ここを書き換える
+        console.error("エラー発生:", err);
+        
+        // 429エラー（API制限）かどうかの判定
+        if (err.status === 429 || (err.details && err.details.error && err.details.error.includes('429'))) {
+            throw new Error("API_LIMIT"); // 制限エラーを特別扱い
+        }
+        throw err;
     }
 }
 
