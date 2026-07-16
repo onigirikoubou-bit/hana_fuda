@@ -244,60 +244,43 @@ window.displayHistoryContent = function(index) {
     const item = history[index];
     const resultArea = document.getElementById('result-area');
     
-    // ここで resultArea と item が存在するかチェック
     if (resultArea && item) {
         resultArea.style.display = 'block';
         
-        // カード表示用のHTMLを先に作成
-        let cardsHtml = '<div style="display:flex; gap:10px; margin:10px 0; height:169px; overflow:hidden;">';
-        
-        if (item.cards && Array.isArray(item.cards)) {
-            item.cards.forEach(card => {
-    const col = parseInt(card.col) || 0;
-    const row = parseInt(card.row) || 0;
-    
-    // 重要なのは「余白（gap）を含めない」ことです
-    // 札サイズは固定で計算します
-    const posX = col * 123;
-    const posY = row * 185;
-
-    cardsHtml += `
-        <div style="
-            width: 107px; 
-            height: 169px; 
-            background-image: url('hanafuda.png'); 
-            background-position: -${posX}px -${posY}px;
-            border: 1px solid #ccc;
-            flex-shrink: 0;
-            background-repeat: no-repeat;">
-        </div>`;
-});
-        }
+        // 1. 札のコンテナを作成
+        let cardsHtml = '<div style="display:flex; gap:10px; margin:10px 0; height:169px;">';
+        item.cards.forEach(card => {
+            const col = parseInt(card.col) || 0;
+            const row = parseInt(card.row) || 0;
+            // 正常な 123/185 の計算式を使用
+            cardsHtml += `
+                <div style="
+                    width: 107px; 
+                    height: 169px; 
+                    background-image: url('hanafuda.png'); 
+                    background-position: -${col * 123}px -${row * 185}px;
+                    border: 1px solid #ccc;
+                    flex-shrink: 0;
+                    background-repeat: no-repeat;">
+                </div>`;
+        });
         cardsHtml += '</div>';
 
-        // HTMLをセット
+        // 2. 鑑定結果のレイアウトを構築
+        // ここで「札」を「テキスト」より上に持ってくるか、順序を指定します
         resultArea.innerHTML = `
-            <div style="max-width: 400px; margin: 0 auto;">
-                <div class="ai-reply">${item.content.replace(/\n/g, '<br>')}</div>
+            <div id="history-content-container" style="display:flex; flex-direction:column; align-items:center;">
                 ${cardsHtml}
+                <div class="ai-reply" style="text-align:center; margin-top:10px;">${item.content.replace(/\n/g, '<br>')}</div>
                 <button id="reset-button-history" style="margin-top:20px;">もう一度占う</button>
             </div>
         `;
 
-        // ボタンのイベント登録
+        // 3. ボタンのイベント登録
         document.getElementById('reset-button-history').addEventListener('click', () => location.reload());
 
-        // スクロール処理
-        window.scrollTo({
-            top: 0,
-            behavior: 'smooth'
-        });
-        
-        console.log("表示成功:", item.date);
-
-    } else { 
-        // この else は、一番上の if (resultArea && item) に対応しています
-        console.error("表示失敗: result-areaが見つからないか、アイテムがありません");
+        // スクロール
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 };
 
