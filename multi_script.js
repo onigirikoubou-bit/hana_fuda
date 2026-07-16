@@ -305,6 +305,11 @@ window.displayHistoryContent = function(index) {
         }
         
         document.getElementById('reset-button-history').addEventListener('click', () => location.reload());
+    // ★追加：画面の先頭へスムーズにスクロール
+        window.scrollTo({
+            top: 0,
+            behavior: 'smooth' // 'auto' にすると一瞬で移動します
+        });
     }
 };
 
