@@ -258,10 +258,10 @@ window.displayHistoryContent = function(index) {
                 
                 cardsHtml += `
                     <div style="
-                        width: 123px; 
-                        height: 185px; 
+                        width: 107px; 
+                        height: 169px; 
                         background-image: url('hanafuda.png'); 
-                        background-position: -${col * 107}px -${row * 169}px;
+                        background-position: -${col * 123}px -${row * 185}px;
                         border: 1px solid #ccc;
                         flex-shrink: 0;
                         display: inline-block;
