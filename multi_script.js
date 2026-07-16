@@ -13,13 +13,13 @@ fetch('hanafuda_data.json')
 
     // multi_script.js の一番上のどこかに追記
 window.addEventListener('load', () => {
-    fetch('/ask', {
-        method: 'POST',
+    // サーバーをこっそり起こしておくための軽いリクエスト
+    fetch('/ask', { 
+        method: 'POST', 
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt: "keep-alive" })
-    });
+        body: JSON.stringify({ prompt: "keep-alive" }) // 軽いメッセージ
+    }).catch(err => console.log("起動準備完了"));
 });
-
 
 // シャッフル関数
 function getRandomCards(count) {
