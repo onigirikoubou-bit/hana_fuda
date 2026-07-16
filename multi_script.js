@@ -268,20 +268,26 @@ window.displayHistoryContent = function(index) {
 
         // 2. 鑑定結果のレイアウトを構築
         // ここで「札」を「テキスト」より上に持ってくるか、順序を指定します
-        resultArea.innerHTML = `
-            <div id="history-content-container" style="display:flex; flex-direction:column; align-items:center;">
-                ${cardsHtml}
-                <div class="ai-reply" style="text-align:center; margin-top:10px;">${item.content.replace(/\n/g, '<br>')}</div>
-                <button id="reset-button-history" style="margin-top:20px;">もう一度占う</button>
+            resultArea.innerHTML = `
+        <div id="history-content-container" style="display:flex; flex-direction:column; align-items:flex-start; max-width: 400px; margin: 0 auto;">
+            <div style="align-self: center;">${cardsHtml}</div>
+            <div class="ai-reply" style="text-align:left; margin-top:20px; width: 100%;">${item.content.replace(/\n/g, '<br>')}</div>
+            <div style="align-self: center; margin-top:20px;">
+                <button id="reset-button-history">もう一度占う</button>
             </div>
-        `;
+        </div>
+    `;
 
-        // 3. ボタンのイベント登録
-        document.getElementById('reset-button-history').addEventListener('click', () => location.reload());
+    // 3. ボタンのイベント登録（HTMLを書き込んだ後に要素を探す必要があります）
+    document.getElementById('reset-button-history').addEventListener('click', () => location.reload());
 
-        // スクロール
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
+    // 4. スクロール処理（一番最後でOKです）
+    window.scrollTo({
+        top: 0,
+        behavior: 'smooth'
+    });
+    
+    console.log("表示成功:", item.date);
 };
 
 // 【修正案】fetch を送る部分
