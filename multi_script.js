@@ -146,20 +146,15 @@ async function getFortuneFromAI(prompt, retries = 3) {
             body: JSON.stringify({ prompt: prompt })
         });
 
-        // 503 (過負荷) だけでなく、500 (サーバー内部エラー) でもリトライする
-        // 多くのAPIエラーは 500 で返ってくるため、ここを広げると安定します
-        if ((response.status === 503 || response.status === 500) && retries > 0) {
-            console.log(`再試行します... あと ${retries} 回`);
+        if (response.status === 503 && retries > 0) {
             await new Promise(resolve => setTimeout(resolve, 2000));
             return getFortuneFromAI(prompt, retries - 1);
         }
 
         if (!response.ok) throw new Error('サーバーエラー');
         return await response.json();
-        
     } catch (err) {
         console.error("エラー発生:", err);
-        // 通信自体が失敗した場合（ネットワーク瞬断など）
         if(retryBtn) retryBtn.style.display = 'block';
         throw err;
     }
