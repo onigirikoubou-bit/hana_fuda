@@ -238,19 +238,48 @@ function renderHistory() {
     historyList.innerHTML = html;
 }
 
-// 履歴をクリックしたときに呼び出される関数をグローバルに定義
+// 履歴クリック用のグローバル関数
 window.displayHistoryContent = function(index) {
     const history = JSON.parse(localStorage.getItem('fortuneHistory') || '[]');
     const item = history[index];
+    
+    // result-area が確実に存在するかを再確認
     const resultArea = document.getElementById('result-area');
     
     if (resultArea && item) {
-        resultArea.innerHTML = `<div class="ai-reply">${item.content.replace(/\n/g, '<br>')}</div>`;
+        // 念のためスタイルを強制的に可視化
+        resultArea.style.display = 'block';
+        
+        // 内容を書き込み
+        resultArea.innerHTML = `
+            <div class="ai-reply">${item.content.replace(/\n/g, '<br>')}</div>
+            <button id="reset-button-history" style="margin-top:20px;">もう一度占う</button>
+        `;
+        
+        // 履歴表示用にも「もう一度占う」ボタンを設置し、イベントを付与
+        document.getElementById('reset-button-history').addEventListener('click', () => {
+            // ここで元の「もう一度占う」ボタンと同じ初期化処理（location.reload等）を呼ぶか、
+            // 画面をリセットする処理を書いてください
+            location.reload(); 
+        });
+
         console.log("表示成功:", item.date);
     } else {
         console.error("表示失敗: result-areaが見つかりません");
     }
 };
 
+// --- 履歴表示ボタンのイベント設定（一番下に追加） ---
+
+document.getElementById('show-history-btn').addEventListener('click', () => {
+    const historyArea = document.getElementById('history-area');
+    if (historyArea) {
+        // 表示を切り替える
+        historyArea.style.display = 'block'; 
+        // 履歴を描画する
+        renderHistory(); 
+    }
+});
+
 // ページ読み込み時に過去の履歴を表示
-window.addEventListener('DOMContentLoaded', renderHistory);
+// window.addEventListener('DOMContentLoaded', renderHistory);
