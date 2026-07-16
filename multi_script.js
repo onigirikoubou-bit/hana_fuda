@@ -78,7 +78,7 @@ container.addEventListener('mouseup', () => {
     
     const slot = document.getElementById(`slot-${selectedCards.length}`);
     slot.style.backgroundImage = "url('hanafuda.png')";
-    slot.style.backgroundPosition = `-${found.col * 123}px -${found.row * 185}px`;
+    slot.style.backgroundPosition = `-${found.col * 107}px -${found.row * 169}px`;
     slot.textContent = "";
 
     selectedCards.push(found);
