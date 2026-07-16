@@ -11,11 +11,15 @@ fetch('hanafuda_data.json')
     .then(data => { hanafudaData = data; })
     .catch(error => console.error("データ読み込み失敗:", error));
 
-// 初期化と起動用リクエスト
+    // multi_script.js の一番上のどこかに追記
 window.addEventListener('load', () => {
-    drawQueue = getRandomCards(3);
-    fetch('/ask', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt: "keep-alive" }) }).catch(err => console.log("起動準備完了"));
+    fetch('/ask', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: "keep-alive" })
+    });
 });
+
 
 // シャッフル関数
 function getRandomCards(count) {
@@ -27,10 +31,20 @@ function getRandomCards(count) {
     return shuffled.slice(0, count);
 }
 
-// プロンプト生成（修正なし）
+// ページ読み込み時
+window.addEventListener('load', () => {
+    drawQueue = getRandomCards(3);
+});
+
+// AI通信関連関数
 function generateFortunePrompt(cards) {
-    const cardsText = cards.map(c => `【札の名前】: ${c.name}\n【詳細情報】: ${typeof c.fortune === 'object' ? JSON.stringify(c.fortune) : c.fortune}`).join("\n");
-    return `あなたは手練の花札占いの専門家です。以下の3枚の札に基づき、相談者の運勢を占ってください。
+    const cardsText = cards.map(c => `
+【札の名前】: ${c.name}
+【詳細情報】: ${typeof c.fortune === 'object' ? JSON.stringify(c.fortune) : c.fortune}
+    `).join("\n");
+
+    return `
+あなたは手練の花札占いの専門家です。以下の3枚の札に基づき、相談者の運勢を占ってください。
 
 ■引いた札の情報:
 ${cardsText}
@@ -47,102 +61,106 @@ ${cardsText}
 ・[待ち人]：(ここに統合された内容)
 ・[失せ物]：(ここに統合された内容)
 ※その他、重要な項目があれば適宜加えてください。そして最後に、前向きになれるようなメッセージを、日本時間の偶数日には短歌風に、奇数日には詩的な文章でまとめてください。なお文章には偶数日とか奇数日とか入れずに、「今日は短歌風に（詩歌風に）まとめます」としてください。
-※重要：回答には「引いた札のリスト」や「個別の札ごとのメッセージ」を直接出力・羅列しないでください。必ず上記1と2の形式のみで回答してください。`;
+
+※重要：回答には「引いた札のリスト」や「個別の札ごとのメッセージ」を直接出力・羅列しないでください。必ず上記1と2の形式のみで回答してください。
+`;
 }
 
-// ★ここが重要：関数を外に出しました
-function resetGame() {
-    selectedCards = [];
-    drawQueue = getRandomCards(3);
-    aiResponse.innerHTML = `<h3>総合運勢</h3><p id="ai-text">準備が整いました。</p><button id="fortune-button">AIに運勢を解釈してもらう</button><div id="fortune-result-area"></div>`;
-    setupFortuneButton();
-    for(let i = 0; i < 3; i++) {
-        const slot = document.getElementById(`slot-${i}`);
-        if(slot) { slot.style.backgroundImage = "none"; slot.textContent = `札 ${i+1}`; }
-    }
-}
 
-function setupFortuneButton() {
-    const btn = document.getElementById('fortune-button');
-    if (!btn) return;
-    btn.addEventListener('click', async () => {
-        const aiText = document.getElementById('ai-text');
-        const resultArea = document.getElementById('fortune-result-area');
-        const fortuneBtn = document.getElementById('fortune-button');
-        aiText.textContent = "AIが思考中...";
-        fortuneBtn.style.display = 'none';
-        try {
-            const data = await getFortuneFromAI(generateFortunePrompt(selectedCards));
-            if (data && data.reply) {
-                saveHistory(data.reply, selectedCards);
-                resultArea.innerHTML = `<div class="ai-reply">${data.reply.replace(/\n/g, '<br>')}</div><button id="reset-button">もう一度占う</button>`;
-                document.getElementById('reset-button').addEventListener('click', resetGame);
-            }
-        } catch (err) {
-            aiText.textContent = "現在混雑しています。もう一度ボタンを押してください。";
-            fortuneBtn.style.display = 'block';
-        }
-    });
-}
-
-function saveHistory(resultText, cards) {
-    let history = JSON.parse(localStorage.getItem('fortuneHistory') || '[]');
-    history.unshift({ date: new Date().toLocaleString(), content: resultText, cardIds: cards.map(c => c.id) });
-    localStorage.setItem('fortuneHistory', JSON.stringify(history.slice(0, 10)));
-}
-
-// 鑑定実行（mouseup イベント）
+// クリックイベント
+// --- containerの開始 ---
 container.addEventListener('mouseup', () => {
     if (selectedCards.length >= targetCount) return;
     if (!drawQueue || drawQueue.length === 0) drawQueue = getRandomCards(3);
 
     const nextCard = drawQueue[selectedCards.length];
     const found = hanafudaData.find(c => c.id === nextCard.id);
+    
     const slot = document.getElementById(`slot-${selectedCards.length}`);
     slot.style.backgroundImage = "url('hanafuda.png')";
     slot.style.backgroundPosition = `-${found.col * 123}px -${found.row * 185}px`;
     slot.textContent = "";
+
     selectedCards.push(found);
 
     if (selectedCards.length === targetCount) {
-        aiResponse.innerHTML = `<h3>総合運勢</h3><p id="ai-text">準備が整いました。</p><button id="fortune-button">AIに運勢を解釈してもらう</button><div id="fortune-result-area"></div>`;
-        setupFortuneButton();
-    }
-});
+        aiResponse.innerHTML = `
+            <h3>総合運勢</h3>
+            <p id="ai-text">準備が整いました。</p>
+            <button id="fortune-button">AIに運勢を解釈してもらう</button>
+            <div id="fortune-result-area"></div>
+        `;
 
+        document.getElementById('fortune-button').addEventListener('click', async () => {
+            const aiText = document.getElementById('ai-text');
+            const resultArea = document.getElementById('fortune-result-area');
+            const fortuneBtn = document.getElementById('fortune-button');
+            
+            aiText.textContent = "AIが思考中...";
+            fortuneBtn.style.display = 'none';
+
+            try {
+                const data = await getFortuneFromAI(generateFortunePrompt(selectedCards));
+                
+                if (data && data.reply) {
+                    resultArea.innerHTML = `
+                        <div class="ai-reply">${data.reply.replace(/\n/g, '<br>')}</div>
+                        <button id="reset-button" style="margin-top:20px;">もう一度占う</button>
+                    `;
+                    aiText.textContent = "鑑定完了";
+
+                    // リセットボタンの処理
+                    document.getElementById('reset-button').addEventListener('click', () => {
+                        selectedCards = [];
+                        drawQueue = getRandomCards(3);
+                        aiResponse.innerHTML = ""; // 画面クリア
+                        for(let i = 0; i < targetCount; i++) {
+                            const slot = document.getElementById(`slot-${i}`);
+                            if(slot) {
+                                slot.style.backgroundImage = "none";
+                                slot.textContent = ""; // 必要に応じて表示を元に戻す
+                            }
+                        }
+                    });
+                }
+            } catch (err) {
+                aiText.textContent = "現在混雑しています。もう一度ボタンを押して再試行してください。";
+                fortuneBtn.style.display = 'block';
+            }
+        });
+    } // ← if (selectedCards.length === targetCount) を閉じる
+}); // ← containerのmouseupを閉じる
 
 // --- 以下、関数など ---
 const retryBtn = document.getElementById('retry-btn');
 let lastPrompt = "";
 
-// multi_script.js の送信処理部分をこのように書き換えてください
 async function getFortuneFromAI(prompt, retries = 3) {
+    lastPrompt = prompt; 
+    if(retryBtn) retryBtn.style.display = 'none';
+
     try {
         const response = await fetch('/ask', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            // ★ポイント：JSON.stringifyは改行を適切にエスケープ処理しますが、
-            // 万が一のために、プロンプト文字列が空でないか確認
-            body: JSON.stringify({ prompt: prompt }) 
+            body: JSON.stringify({ prompt: prompt })
         });
 
-        
+        // 503 (過負荷) だけでなく、500 (サーバー内部エラー) でもリトライする
+        // 多くのAPIエラーは 500 で返ってくるため、ここを広げると安定します
+        if ((response.status === 503 || response.status === 500) && retries > 0) {
+            console.log(`再試行します... あと ${retries} 回`);
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            return getFortuneFromAI(prompt, retries - 1);
+        }
 
-        // 応答をチェック
-        if (!response.ok) {
-            const errorText = await response.text(); // サーバーからのエラー内容を取得
-            console.error("サーバー応答エラー:", errorText);
-            throw new Error(`サーバーエラー: ${response.status}`);
-        }
+        if (!response.ok) throw new Error('サーバーエラー');
         return await response.json();
-    } catch (err) {
-        // ★ここを書き換える
-        console.error("エラー発生:", err);
         
-        // 429エラー（API制限）かどうかの判定
-        if (err.status === 429 || (err.details && err.details.error && err.details.error.includes('429'))) {
-            throw new Error("API_LIMIT"); // 制限エラーを特別扱い
-        }
+    } catch (err) {
+        console.error("エラー発生:", err);
+        // 通信自体が失敗した場合（ネットワーク瞬断など）
+        if(retryBtn) retryBtn.style.display = 'block';
         throw err;
     }
 }
@@ -164,62 +182,3 @@ document.addEventListener('click', async (event) => {
         }
     }
 });
-
-function saveHistory(resultText) {
-    // 履歴を取得して配列に変換
-    let history = JSON.parse(localStorage.getItem('fortuneHistory') || '[]');
-    
-    // 最新の結果を先頭に追加（日付付き）
-    history.unshift({
-        date: new Date().toLocaleString(),
-        content: resultText,
-        cardIds: cards.map(c => c.id) // カードのIDリストのみ保存
-    });
-    
-        localStorage.setItem('fortuneHistory', JSON.stringify(history.slice(0, 10)));
-}
-
-document.getElementById('show-history-btn').addEventListener('click', () => {
-    const area = document.getElementById('history-area');
-    const list = document.getElementById('history-list');
-    
-    if (area.style.display === 'none') {
-        // 履歴を読み込んで表示
-        let history = JSON.parse(localStorage.getItem('fortuneHistory') || '[]');
-        if (history.length === 0) {
-            list.innerHTML = "<p>まだ履歴はありません。</p>";
-        } else {
-            list.innerHTML = history.map((item, index) => `
-                <div style="border-bottom:1px solid #eee; padding:10px;">
-                    <strong>${item.date}</strong><br>
-                    <p style="font-size:0.9em;">${item.content.replace(/\n/g, '<br>').substring(0, 60)}...</p>
-                </div>
-            `).join("");
-        }
-        area.style.display = 'block';
-    } else {
-        area.style.display = 'none';
-    }
-});
-
-// 履歴表示関数の修正
-window.displayHistoryResult = function(index) {
-    let history = JSON.parse(localStorage.getItem('fortuneHistory') || '[]');
-    let selected = history[index];
-    
-    // 鑑定結果表示
-    const resultArea = document.getElementById('fortune-result-area');
-    resultArea.innerHTML = `<div>${selected.content.replace(/\n/g, '<br>')}</div>`;
-    
-    // カード画像復元
-    selected.cardIds.forEach((id, i) => {
-        const found = hanafudaData.find(c => c.id === id);
-        const slot = document.getElementById(`slot-${i}`);
-        if (slot && found) {
-            slot.style.backgroundImage = "url('hanafuda.png')";
-            slot.style.backgroundPosition = `-${found.col * 123}px -${found.row * 185}px`;
-        }
-    });
-    document.getElementById('history-area').style.display = 'none';
-};
-
