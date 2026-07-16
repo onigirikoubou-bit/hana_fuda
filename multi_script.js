@@ -253,20 +253,25 @@ window.displayHistoryContent = function(index) {
         
         if (item.cards && Array.isArray(item.cards)) {
             item.cards.forEach(card => {
-                const col = parseInt(card.col) || 0;
-                const row = parseInt(card.row) || 0;
-                
-                cardsHtml += `
-                    <div style="
-                        width: 107px; 
-                        height: 169px; 
-                        background-image: url('hanafuda.png'); 
-                        background-position: -${col * 107}px -${row * 169}px;
-                        border: 1px solid #ccc;
-                        flex-shrink: 0;
-                        background-repeat: no-repeat;">
-                    </div>`;
-            });
+    const col = parseInt(card.col) || 0;
+    const row = parseInt(card.row) || 0;
+    
+    // 重要なのは「余白（gap）を含めない」ことです
+    // 札サイズは固定で計算します
+    const posX = col * 107;
+    const posY = row * 169;
+
+    cardsHtml += `
+        <div style="
+            width: 107px; 
+            height: 169px; 
+            background-image: url('hanafuda.png'); 
+            background-position: -${posX}px -${posY}px;
+            border: 1px solid #ccc;
+            flex-shrink: 0;
+            background-repeat: no-repeat;">
+        </div>`;
+});
         }
         cardsHtml += '</div>';
 
