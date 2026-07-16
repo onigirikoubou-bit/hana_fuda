@@ -91,8 +91,8 @@ const stopShuffle = () => {
 
     // 3. カードの表示位置（検索した found から col/row を取得）
     // ※ 123と185は、前回使用していた画像サイズに合わせて調整してください
-    const posX = found.col * 123; 
-    const posY = found.row * 185; 
+    const posX = found.col * 107; 
+    const posY = found.row * 169; 
     container.style.backgroundPosition = `-${posX}px -${posY}px`;
 
     // 札の名前を表示
