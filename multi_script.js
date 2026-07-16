@@ -227,20 +227,27 @@ function renderHistory() {
     historyList.innerHTML = ''; // 一旦クリア
     
     history.forEach(item => {
-        const div = document.createElement('div');
-        div.style.cursor = 'pointer';
-        div.style.padding = '8px';
-        div.style.borderBottom = '1px solid #eee';
-        div.innerText = `${item.date} の鑑定`;
+        // renderHistory 関数の div 生成部分をこう変えてみてください
+const div = document.createElement('div');
+div.style.cursor = 'pointer';
+div.style.padding = '10px';
+div.style.border = '1px solid #000'; // 枠線を表示
+div.style.marginTop = '5px';
+div.style.backgroundColor = '#f9f9f9'; // 背景色追加
+div.innerText = `${item.date} の鑑定`;
 
         // クリックイベント：履歴をクリックしたら全文を resultArea に表示
         div.addEventListener('click', () => {
-            const resultArea = document.getElementById('result-area');
-            if (resultArea) {
-                // 改行コードを反映するために innerHTML を使用
-                resultArea.innerHTML = `<div class="ai-reply">${item.content.replace(/\n/g, '<br>')}</div>`;
-            }
-        });
+    console.log("履歴がクリックされました！"); // これが出るか確認
+    const resultArea = document.getElementById('result-area');
+    console.log("結果エリア:", resultArea); // これが null でないか確認
+
+    if (resultArea) {
+        resultArea.innerHTML = `<div class="ai-reply">${item.content.replace(/\n/g, '<br>')}</div>`;
+    } else {
+        alert("結果表示エリアが見つかりません！");
+    }
+});
 
         historyList.appendChild(div);
     });
