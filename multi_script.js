@@ -49,7 +49,7 @@ fetch('hanafuda_data.json')
 
 // サーバー維持用
 window.addEventListener('load', () => {
-    fetch('/ask', {
+    fetch('https://hana-fuda.onrender.com/ask', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ prompt: "keep-alive" })
