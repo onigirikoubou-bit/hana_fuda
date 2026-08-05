@@ -175,7 +175,7 @@ container.addEventListener('mouseup', () => {
 
 // AI通信用共通関数
 async function getFortuneFromAI(prompt) {
-    const response = await fetch('/ask', {
+    const response = await fetch('https://hana-fuda.onrender.com/ask', { ... });
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ prompt: prompt })
