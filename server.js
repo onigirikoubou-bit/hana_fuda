@@ -35,7 +35,7 @@ app.post('/ask', async (req, res) => {
         console.log("API応答受信完了");
         return res.status(200).json({ reply: text });
 
-    // server.js の catch 部分をこのように修正
+    // server.js の catch 部分をこのように修正。
 } catch (error) {
     if (error.status === 429) {
         console.error("【API制限】リクエスト回数上限に達しました。");

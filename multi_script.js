@@ -6,7 +6,7 @@ let drawQueue = [];
 const urlParams = new URLSearchParams(window.location.search);
 const targetCount = parseInt(urlParams.get('count')) || 3; 
 
-// 2. 枚数ごとの重み付けルールを一元管理
+// 2. 枚数ごとの重み付けルールを一元管理。
 const fortuneRules = {
     2: { 
         weightText: "２枚引いた場合は１枚目を7/10、２枚目を3/10の重みで鑑定してください。" 
