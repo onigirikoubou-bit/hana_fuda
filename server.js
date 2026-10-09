@@ -35,15 +35,22 @@ app.post('/ask', async (req, res) => {
         console.log("API応答受信完了");
         return res.status(200).json({ reply: text });
 
+<<<<<<< HEAD
     // server.js の catch 部分をこのように修正。
 } catch (error) {
     if (error.status === 429) {
         console.error("【API制限】リクエスト回数上限に達しました。");
         return res.status(429).json({ reply: "現在、利用者が多いため一時的に制限されています。少し時間を置いてお試しください。" });
+=======
+    } catch (error) {
+        if (error.status === 429) {
+            console.error("【API制限】リクエスト回数上限に達しました。");
+            return res.status(429).json({ reply: "現在、利用者が多いため一時的に制限されています。少し時間を置いてお試しください。" });
+        }
+        console.error("【重大エラー】:", error);
+        return res.status(500).json({ reply: "サーバーエラーが発生しました。" });
+>>>>>>> adfa2ca92742b65b0f8ad50a6541250a6d64e49b
     }
-    console.error("【重大エラー】:", error);
-    return res.status(500).json({ reply: "サーバーエラーが発生しました。" });
-}
 });
 
 app.listen(3000, () => console.log('サーバーがポート3000で起動しました'));

@@ -2,9 +2,10 @@ let hanafudaData = [];
 let selectedCards = [];
 let drawQueue = [];
 
-// 1. URLパラメータから枚数を取得（指定がなければデフォルトで3枚）
+// 1. URLパラメータから枚数とモードを取得
 const urlParams = new URLSearchParams(window.location.search);
 const targetCount = parseInt(urlParams.get('count')) || 3; 
+const isManualMode = urlParams.get('mode') === 'manual';
 
 // 2. 枚数ごとの重み付けルールを一元管理。
 const fortuneRules = {
@@ -25,38 +26,74 @@ const fortuneRules = {
 const container = document.getElementById('card-container');
 const aiResponse = document.getElementById('ai-response'); 
 
-// 3. ページ初期化時に、targetCount に合わせたスロットを動的生成する
-window.addEventListener('DOMContentLoaded', () => {
-    // multi.html側のスロットを配置するコンテナ（既存のクラス名に合わせて指定してください）
-    // ※もしコンテナのクラス名が .slot-wrapper の場合は適宜書き換えてください
-    const slotWrapper = document.querySelector('.slot-wrapper') || container;
-    
-    // 既存の中身をクリアして、必要枚数分だけスロットを作成
-    slotWrapper.innerHTML = '';
-    for (let i = 0; i < targetCount; i++) {
-        slotWrapper.innerHTML += `<div class="slot" id="slot-${i}">?</div>`;
-    }
-});
-
-// 4. データ読み込み
+// 3. データ読み込み ＆ 初期化処理
 fetch('hanafuda_data.json')
     .then(response => response.json())
     .then(data => { 
         hanafudaData = data; 
-        drawQueue = getRandomCards(targetCount);
+        
+        if (isManualMode) {
+            // 手動選択モードの場合：sessionStorageから選択されたIDを取得してセット
+            const savedIds = JSON.parse(sessionStorage.getItem('manualSelectedIds') || '[]');
+            
+            // スロットの動的生成と同時にカードをはめ込む
+            initSlotsAndManualCards(savedIds);
+        } else {
+            // 通常のランダムモード
+            initRandomSlots();
+            drawQueue = getRandomCards(targetCount);
+        }
     })
     .catch(error => console.error("データ読み込み失敗:", error));
 
-// サーバー維持用
+// サーバー維持用（不要な場合は削除可能ですが残してもOKです）
 window.addEventListener('load', () => {
-    fetch('https://hana-fuda.onrender.com/ask', {
+    fetch('/ask', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ prompt: "keep-alive" })
-    });
+    }).catch(() => {});
 });
 
-// シャッフル関数
+// スロット生成（通常ランダム用）
+function initRandomSlots() {
+    const slotWrapper = document.querySelector('.slot-wrapper') || container;
+    slotWrapper.innerHTML = '';
+    for (let i = 0; i < targetCount; i++) {
+        slotWrapper.innerHTML += `<div class="slot" id="slot-${i}">?</div>`;
+    }
+}
+
+// スロット生成 ＆ 手動選択カードの即時セット
+function initManualSlots(cardList) {
+    const slotWrapper = document.querySelector('.slot-wrapper') || container;
+    slotWrapper.innerHTML = '';
+    
+    cardList.forEach((found, i) => {
+        slotWrapper.innerHTML += `<div class="slot" id="slot-${i}">?</div>`;
+    });
+
+    // スロットに画像を反映し、selectedCardsに格納
+    cardList.forEach((found, i) => {
+        const slot = document.getElementById(`slot-${i}`);
+        if (slot) {
+            slot.style.backgroundImage = "url('hanafuda.png')";
+            slot.style.backgroundPosition = `-${found.col * 123}px -${found.row * 185}px`;
+            slot.textContent = "";
+        }
+        selectedCards.push(found);
+    });
+
+    // 手動モードの場合は最初から鑑定スタンバイ状態にする
+    triggerReadyState();
+}
+
+function initSlotsAndManualCards(ids) {
+    const matchedCards = ids.map(id => hanafudaData.find(c => c.id === id)).filter(Boolean);
+    initManualSlots(matchedCards);
+}
+
+// シャッフル関数（通常モード用）
 function getRandomCards(count) {
     let shuffled = [...hanafudaData]; 
     for (let i = shuffled.length - 1; i > 0; i--) {
@@ -99,15 +136,15 @@ ${cardsText}
 `;
 }
 
-// クリック（タップ）イベント
+// クリック（タップ）イベント（通常ランダムモード時のみ有効）
 container.addEventListener('mouseup', () => {
+    if (isManualMode) return; // 手動モードのときはクリック抽選を行わない
     if (selectedCards.length >= targetCount) return;
     if (!drawQueue || drawQueue.length === 0) drawQueue = getRandomCards(targetCount);
 
     const nextCard = drawQueue[selectedCards.length];
     const found = hanafudaData.find(c => c.id === nextCard.id);
     
-    // 動的生成されたスロットを取得
     const slot = document.getElementById(`slot-${selectedCards.length}`);
     if (slot) {
         slot.style.backgroundImage = "url('hanafuda.png')";
@@ -117,43 +154,48 @@ container.addEventListener('mouseup', () => {
 
     selectedCards.push(found);
 
-    // 規定枚数に達したときの処理
     if (selectedCards.length === targetCount) {
-        const targetArea = aiResponse || document.getElementById('result-area');
-        if (targetArea) {
-            targetArea.innerHTML = `
-                <h3>総合運勢</h3>
-                <p id="ai-text">準備が整いました。</p>
-                <button id="fortune-button">AIに運勢を解釈してもらう</button>
-                <div id="fortune-result-area"></div>
-            `;
+        triggerReadyState();
+    }
+});
 
-            document.getElementById('fortune-button').addEventListener('click', async () => {
-                const aiText = document.getElementById('ai-text');
-                const resultArea = document.getElementById('fortune-result-area');
-                const fortuneBtn = document.getElementById('fortune-button');
+// 規定枚数に達した、あるいは最初から揃っているときの処理を共通化
+function triggerReadyState() {
+    const targetArea = aiResponse || document.getElementById('result-area');
+    if (targetArea) {
+        targetArea.innerHTML = `
+            <h3>総合運勢</h3>
+            <p id="ai-text">準備が整いました。</p>
+            <button id="fortune-button">AIに運勢を解釈してもらう</button>
+            <div id="fortune-result-area"></div>
+        `;
+
+        document.getElementById('fortune-button').addEventListener('click', async () => {
+            const aiText = document.getElementById('ai-text');
+            const resultArea = document.getElementById('fortune-result-area');
+            const fortuneBtn = document.getElementById('fortune-button');
+            
+            aiText.textContent = "AIが思考中...";
+            fortuneBtn.style.display = 'none';
+
+            try {
+                const data = await getFortuneFromAI(generateFortunePrompt(selectedCards));
                 
-                aiText.textContent = "AIが思考中...";
-                fortuneBtn.style.display = 'none';
+                if (data && data.reply) {
+                    resultArea.innerHTML = `
+                        <div class="ai-reply" style="text-align:left; margin-top:20px; width: 100%;">${data.reply.replace(/\n/g, '<br>')}</div>
+                        <button id="reset-button" style="margin-top:20px;">もう一度占う</button>
+                    `;
+                    aiText.textContent = "鑑定完了";
 
-                try {
-                    const data = await getFortuneFromAI(generateFortunePrompt(selectedCards));
-                    
-                    if (data && data.reply) {
-                        resultArea.innerHTML = `
-                            <div class="ai-reply" style="text-align:left; margin-top:20px; width: 100%;">${data.reply.replace(/\n/g, '<br>')}</div>
-                            <button id="reset-button" style="margin-top:20px;">もう一度占う</button>
-                        `;
-                        aiText.textContent = "鑑定完了";
+                    updateHistory(data.reply, selectedCards, targetCount);
 
-                        // 履歴に保存（枚数情報も持たせる）
-                        updateHistory(data.reply, selectedCards, targetCount);
-
-                        // リセットボタンの処理
-                        document.getElementById('reset-button').addEventListener('click', () => {
+                    document.getElementById('reset-button').addEventListener('click', () => {
+                        if (isManualMode) {
+                            window.location.href = 'select.html'; // 手動モードなら選択画面に戻る
+                        } else {
                             selectedCards = [];
                             drawQueue = getRandomCards(targetCount);
-                            // スロットの見た目をリセット
                             for(let i = 0; i < targetCount; i++) {
                                 const s = document.getElementById(`slot-${i}`);
                                 if(s) {
@@ -162,20 +204,20 @@ container.addEventListener('mouseup', () => {
                                 }
                             }
                             targetArea.innerHTML = ""; 
-                        });
-                    }
-                } catch (err) {
-                    aiText.textContent = "現在混雑しています。もう一度ボタンを押して再試行してください。";
-                    fortuneBtn.style.display = 'block';
+                        }
+                    });
                 }
-            });
-        }
+            } catch (err) {
+                aiText.textContent = "現在混雑しています。もう一度ボタンを押して再試行してください。";
+                fortuneBtn.style.display = 'block';
+            }
+        });
     }
-});
+}
 
 // AI通信用共通関数
 async function getFortuneFromAI(prompt) {
-    const response = await fetch('https://hana-fuda.onrender.com/ask', {
+    const response = await fetch('/ask', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ prompt: prompt })
@@ -187,7 +229,7 @@ async function getFortuneFromAI(prompt) {
     return await response.json();
 }
 
-// 履歴管理用関数（枚数 `count` を追加保存）
+// 履歴管理用関数
 function updateHistory(content, cards, count) {
     const history = JSON.parse(localStorage.getItem('fortuneHistory') || '[]');
     
@@ -256,7 +298,7 @@ window.displayHistoryContent = function(index) {
                 <div style="align-self: center;">${cardsHtml}</div>
                 <div class="ai-reply" style="text-align:left; margin-top:20px; width: 100%;">${item.content.replace(/\n/g, '<br>')}</div>
                 <div style="align-self: center; margin-top:20px;">
-                    <button id="reset-button-history">もう一度占う</button>
+                    <button id="reset-button-history">戻る</button>
                 </div>
             </div>
         `;
@@ -270,7 +312,6 @@ window.displayHistoryContent = function(index) {
     }
 };
 
-// 履歴ボタンの制御
 const showHistoryBtn = document.getElementById('show-history-btn');
 if (showHistoryBtn) {
     showHistoryBtn.addEventListener('click', () => {
