@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>花札選択 - 花札占い</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .select-container {
+            max-width: 900px;
+            margin: 0 auto;
+            text-align: center;
+            padding: 20px;
+        }
+        /* 全体を2列のレイアウトにするグリッド（春・夏 / 秋・冬） */
+        .seasons-wrapper {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 25px;
+            margin-bottom: 20px;
+        }
+        @media (max-width: 768px) {
+            .seasons-wrapper {
+                grid-template-columns: 1fr;
+            }
+        }
+        /* 季節ごとのグループセクション */
+        .season-group {
+            text-align: left;
+            background: #fff;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            border: 1px solid #e0e0e0;
+        }
+        .season-group h3 {
+            margin-top: 0;
+            margin-bottom: 15px;
+            font-size: 1.1rem;
+            border-bottom: 2px solid #d32f2f;
+            padding-bottom: 5px;
+            color: #333;
+        }
+        
+        /* 1ヶ月分（4枚）をまとめるブロック */
+        .month-block {
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #dcdcdc; /* 月と月の間の横線 */
+            background: #fafafa;
+            padding: 12px;
+            border-radius: 6px;
+            border: 1px solid #e0e0e0;
+        }
+        .month-block:last-child {
+            margin-bottom: 0;
+        }
+
+        /* 月のタイトル（例：1月：松） */
+        .month-title {
+            font-size: 1rem;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        /* 4枚の札を2列×2行で並べるグリッド */
+        .cards-grid-2x2 {
+            display: grid;
+            grid-template-columns: repeat(2, 123px);
+            gap: 12px;
+            justify-content: center;
+        }
+        
+        /* 札のサムネイル（カード自体の余計な枠線や線を一切排除し、選択中のみ赤枠で強調） */
+        .card-thumb {
+            width: 123px;
+            height: 185px;
+            background-image: url('hanafuda.png');
+            background-repeat: no-repeat;
+            border: none; /* 札ごとの仕切り線を完全に消す */
+            outline: none;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: transform 0.1s, box-shadow 0.1s;
+        }
+        .card-thumb:hover {
+            transform: scale(1.03);
+        }
+        .card-thumb.selected {
+            box-shadow: 0 0 0 4px #d32f2f; /* 選択されているときは外側に綺麗な赤枠を表示 */
+        }
+        #confirm-btn {
+            font-size: 1.1rem;
+            padding: 12px 30px;
+            background-color: #d32f2f;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 15px;
+        }
+        #confirm-btn:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1><a href="start.html" style="text-decoration: none; color: inherit;">花札占い（手動選択）</a></h1>
+        <div class="instruction">手元に出た札を1〜3枚選んでください（選択中: <span id="count-display">0</span>/3枚）</div>
+    </header>
+
+    <div class="select-container">
+        <!-- 春・夏・秋・冬を2列で配置するラッパー -->
+        <div class="seasons-wrapper">
+            <div class="season-group">
+                <h3>春（1月〜3月）</h3>
+                <div id="group-spring"></div>
+            </div>
+            <div class="season-group">
+                <h3>夏（4月〜6月）</h3>
+                <div id="group-summer"></div>
+            </div>
+            <div class="season-group">
+                <h3>秋（7月〜9月）</h3>
+                <div id="group-autumn"></div>
+            </div>
+            <div class="season-group">
+                <h3>冬（10月〜12月）</h3>
+                <div id="group-winter"></div>
+            </div>
+        </div>
+
+        <button id="confirm-btn" disabled>この札で鑑定する</button>
+    </div>
+
+    <script>
+        let selectedIds = [];
+        const maxSelection = 3;
+
+        const countDisplay = document.getElementById('count-display');
+        const confirmBtn = document.getElementById('confirm-btn');
+
+        const monthNames = [
+            "1月：松", "2月：梅", "3月：桜",
+            "4月：藤", "5月：菖蒲", "6月：牡丹",
+            "7月：萩", "8月：芒", "9月：菊",
+            "10月：紅葉", "11月：柳", "12月：桐"
+        ];
+
+        fetch('hanafuda_data.json')
+            .then(res => res.json())
+            .then(data => {
+                for (let m = 0; m < 12; m++) {
+                    const monthBlock = document.createElement('div');
+                    monthBlock.className = 'month-block';
+
+                    const monthTitle = document.createElement('div');
+                    monthTitle.className = 'month-title';
+                    monthTitle.textContent = monthNames[m];
+                    monthBlock.appendChild(monthTitle);
+
+                    const cardsGrid2x2 = document.createElement('div');
+                    cardsGrid2x2.className = 'cards-grid-2x2';
+
+                    for (let i = 0; i < 4; i++) {
+                        const index = m * 4 + i;
+                        const card = data[index];
+                        if (!card) continue;
+
+                        const div = document.createElement('div');
+                        div.className = 'card-thumb';
+                        
+                        const col = card.col !== undefined ? card.col : (index % 9);
+                        const row = card.row !== undefined ? card.row : Math.floor(index / 9);
+                        
+                        div.style.backgroundPosition = `-${col * 123}px -${row * 185}px`;
+
+                        div.addEventListener('click', () => {
+                            const cardId = card.id !== undefined ? card.id : index;
+                            toggleSelect(cardId, div);
+                        });
+
+                        cardsGrid2x2.appendChild(div);
+                    }
+
+                    monthBlock.appendChild(cardsGrid2x2);
+
+                    let targetContainerId = 'group-spring';
+                    if (m >= 3 && m <= 5) targetContainerId = 'group-summer';
+                    else if (m >= 6 && m <= 8) targetContainerId = 'group-autumn';
+                    else if (m >= 9) targetContainerId = 'group-winter';
+
+                    const targetEl = document.getElementById(targetContainerId);
+                    if (targetEl) targetEl.appendChild(monthBlock);
+                }
+            })
+            .catch(err => console.error("読み込みエラー:", err));
+
+        function toggleSelect(id, element) {
+            const index = selectedIds.indexOf(id);
+            if (index > -1) {
+                selectedIds.splice(index, 1);
+                element.classList.remove('selected');
+            } else {
+                if (selectedIds.length >= maxSelection) {
+                    alert(`最大${maxSelection}枚まで選択できます。`);
+                    return;
+                }
+                selectedIds.push(id);
+                element.classList.add('selected');
+            }
+
+            countDisplay.textContent = selectedIds.length;
+            confirmBtn.disabled = selectedIds.length === 0;
+        }
+
+        confirmBtn.addEventListener('click', () => {
+            if (selectedIds.length === 0) return;
+            sessionStorage.setItem('manualSelectedIds', JSON.stringify(selectedIds));
+            window.location.href = `multi.html?count=${selectedIds.length}&mode=manual`;
+        });
+    </script>
+</body>
+</html>
